@@ -1,0 +1,2186 @@
+Running Codex...
+Initializing agent…
+[2K[1A[2K[G╭──────────────────────────────────────────────────────────────╮
+│ ● OpenAI Codex (research preview) v0.1.2504161551            │
+╰──────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────╮
+│ localhost session: e7cdabaf87eb4851a58a1638754f07e7          │
+│ ↳ workdir: ~/.../MazeLifeLab/New Unity Project               │
+│ ↳ model: gpt-5-mini                                          │
+│ ↳ approval: suggest                                          │
+│ ↳ image: SceneShot_manual_20250829_131939.png                │
+╰──────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ send a message or press tab to select a suggestion                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  try: explain this codebase to me | fix any build errors | are there any bugs
+   in my code?
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  try: explain this codebase to me | fix any build errors | are there any bugs
+   in my code?
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[Guser
+Context:
+
+    * Project: MazeLifeLab (Unity). You are given telemetry, console logs, and
+screenshots captured during a single run.
+    * Goal: diagnose and fix steering/actuation issues in the
+executor/controller using only the provided artifacts. Produce minimal, safe
+code patches (apply_patch style) and clear reproduce/test steps.
+
+Attached files (replace below if needed):
+
+    * telemetry CSV: TelemetryLogs/telemetry_latest.csv  (header: time,X,Y,theta
+_rad,V,steerFL_deg,steerFR_deg,motorFL,motorFR,motorRL,motorRR,brakeFL,brakeFR,b
+rakeRL,brakeRR,plannerNodes,hasSolution,execCompleted,lateralError,headingError)
+    * console log: Logs/console.txt
+    * screenshots: Screenshots/*.png
+
+Analysis steps (perform in order):
+
+    1. Validate telemetry format and basic sanity checks:
+        * Confirm timestamps increase, count of samples > 10.
+        2. Confirm existence of planner/executor flags (plannerNodes,
+hasSolution, execCompleted).
+    3. Steering sign analysis:
+        * Compute heading derivative (dtheta/dt or delta position projection)
+and cross-track error wrt planned path.
+        4. Correlate steer commands (steerFL_deg/steerFR_deg or extSteer entries
+ in console) with heading error and desired curvature.
+        5. Determine whether steer sign is inverted relative to desired heading
+correction: e.g., when heading_error>0, steer should have sign to reduce it.
+Identify time ranges where steer*heading_error < 0 persistently.
+    6. Timing/latency:
+        * Measure delay between command issuance (console or telemetry steer
+fields) and change in heading/V. Report typical latency and sample indices where
+ system is unresponsive.
+    7. Motor/brake analysis:
+        * Correlate motor torques with measured speed V. Verify sign consistency
+ (positive torque increases forward speed in forward axis). Detect cases when
+motor sign is opposite to expected.
+    8. Collision/edge cases:
+        * Using console logs, find moments of collision or abrupt stops and
+correlate with the telemetry timestamps to isolate pre-crash commands.
+    9. Synthesize root causes:
+        * Based on above, classify probable causes: steer sign inversion, wrong
+theta convention (Atan2 mismatch), WheelCollider orientation, CarController
+overwrites, delayed command application, etc.
+    10. Provide patches and tests:
+        * Provide an apply_patch block(s) with minimal changes to the repository
+ implementing the fix (e.g., invert sign in TapeExecutor, change theta
+computation in RRTManager.BeginPlanning to Atan2, or use
+CarController.ApplyExternalControl in TrackerExecutor etc.).
+        11. Each patch must be accompanied by a test procedure: how to run Play
+once and which logs/CSV fields to inspect to confirm fix.
+
+Deliverables:
+
+    * Short summary: 2-3 sentences of root cause and recommended fix.
+    * Detailed evidence: specific lines from telemetry and console that support
+diagnosis (timestamp, time index, steer value, heading, error).
+    * Concrete apply_patch blocks for the repo files to apply the fix.
+    * Exact test steps to validate.
+
+Notes:
+
+    * Do not propose large refactors. Minimal, focused changes only.
+    * If multiple plausible fixes exist, prefer the one that is robust and
+lowest risk (e.g., convert heading convention consistently rather than inverting
+ every steer in many places). <Image>
+╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[Guser
+<Image>
+╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+    thinking for 11s
+╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking...                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(     ●)  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+    codex
+    Nice image — it looks like a small car in a tiled maze with a green path
+    drawn on the ground. What would you like me to do with this image? A few
+    common things I can help with:
+
+        * Annotate the image (highlight the green path, draw waypoints, show a
+    fitted spline).
+        * Extract the green path pixels and compute a centerline / skeleton
+    (waypoints you can use for navigation).
+        * Convert the path to a sequence of (x,y) coordinates in image space or
+    normalized world coordinates.
+        * Produce a smooth trajectory (splined) and sample it to produce
+    steering setpoints for a vehicle controller.
+        * Create an occupancy grid or detect the maze walls to plan an
+    alternative route.
+        * Provide Unity/ROS-compatible waypoint output or code for following the
+     path.
+
+    If you want me to extract the green path and produce waypoints, here’s a
+    short Python + OpenCV recipe you can run locally (or I can run here if you
+    upload the original image file). It thresholds on green, cleans the mask,
+    skeletonizes, extracts coordinates, and fits a spline:
+
+    Python (OpenCV + skimage + scipy):
+
+        * Install: pip install opencv-python-headless scikit-image scipy numpy
+
+    Code:
+
+        import cv2
+        import numpy as np
+        from skimage.morphology import skeletonize
+        from scipy.interpolate import splprep, splev
+
+        # load image (BGR)
+        img = cv2.imread('maze.png')
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        # green threshold - may need tuning
+        lower = np.array([40, 100, 50])
+        upper = np.array([90, 255, 255])
+        mask = cv2.inRange(hsv, lower, upper)
+
+        # clean mask
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+        # skeletonize (skimage expects boolean image)
+        bool_mask = mask > 0
+        skel = skeletonize(bool_mask).astype(np.uint8) * 255
+
+        # get skeleton points
+        ys, xs = np.where(skel > 0)  # note: (row, col) => (y,x)
+        pts = np.column_stack([xs, ys])
+
+        # optionally order points along path (simple approach using
+    distance-based sort from one end)
+        # find endpoints (pixels with only one neighbor)
+        from scipy.spatial import cKDTree
+        tree = cKDTree(pts)
+        # pick arbitrary start: left-most point
+        start_idx = np.argmin(pts[:,0])
+        # do greedy nearest-neighbor ordering
+        order = [start_idx]
+        used = set(order)
+        while len(order) < len(pts):
+            dists, idxs = tree.query(pts[order[-1]], k=10)  # look-ahead
+            for i in idxs:
+                if int(i) not in used:
+                    order.append(int(i))
+                    used.add(int(i))
+                    break
+            else:
+                break
+        ordered_pts = pts[order]
+
+        # fit a spline through ordered_pts (downsample if large)
+        sample = ordered_pts[::max(1, len(ordered_pts)//500)].T  # shape (2,N)
+        tck, u = splprep(sample, s=5)  # s= smoothing param
+        unew = np.linspace(0,1,200)
+        out = splev(unew, tck)
+        spline_pts = np.vstack(out).T  # (200,2)
+
+        # draw spline back on image
+        out_img = img.copy()
+        for (x,y) in spline_pts.astype(int):
+            cv2.circle(out_img, (x,y), 3, (0,0,255), -1)
+        cv2.imwrite('maze_spline.png', out_img)
+
+        # save waypoints
+        np.savetxt('waypoints.csv', spline_pts, delimiter=',', header='x,y',
+    comments='')
+
+    Notes and tips:
+
+        * You’ll likely need to tweak the HSV green thresholds for different
+    lighting or camera color.
+        * If skeletonization gives multiple disconnected branches, you can find
+    endpoints and trace the longest branch.
+        * To convert image coordinates to world coordinates you need camera
+    intrinsics / homography or scale factor (if known).
+        * If you want steering commands, I can convert the spline to headings
+    and curvature and provide a simple pure-pursuit controller example.
+
+    Tell me which option you want (e.g., “extract waypoints and return CSV”,
+    “annotate and return an annotated image”, “give steering setpoints for pure
+    pursuit”), and either upload the full-resolution image file or give
+    permission to run the above on the image you provided. I can run the code
+    here and return results.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(●     )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│( ●    )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(  ●   )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(   ●  )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│(    ● )  Thinking..                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G╭──────────────────────────────────────────────────────────────────────────────╮
+│ send a message                                                               │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
+  commands | press enter to send
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+╭──────────────────────────────────────────────────────────────────────────────╮
+│Shell Command                                                                 │
+│                                                                              │
+│$ python3 - << 'PY'                                                           │
+│import csv                                                                    │
+│from math import copysign                                                     │
+│fn='TelemetryLogs/telemetry_20250829_131918.csv'                              │
+│rows=[]                                                                       │
+│with open(fn,'r',encoding='utf-8') as f:                                      │
+│    reader=f.readlines()                                                      │
+│# remove BOM                                                                  │
+│if reader and reader[0].startswith('\ufeff'):                                 │
+│    reader[0]=reader[0].encode('utf-8').decode('utf-8-sig')                   │
+│reader=[r.strip() for r in reader if r.strip()]                               │
+│header=reader[0].split(',')                                                   │
+│for r in reader[1:]:                                                          │
+│    parts=r.split(',')                                                        │
+│    # Convert comma-decimals to dots for numeric strings that include commas? │
+│actually each field like '0,000' but split created separate fields            │
+│    # The file uses comma as decimal inside each CSV field, but fields also   │
+│separated by commas -> that makes wrong splitting; look at sample: line begins│
+│ '0,000,4,891,-1,783,0,8029,0,000,...'                                        │
+│    # So actually decimal point is comma and CSV delimiter is comma, so values│
+│ are split across columns incorrectly. Need to reconstruct by grouping every 3│
+│ tokens? Observing pattern: time like 0,000 -> two tokens '0' '000'. So       │
+│original used comma for decimals producing two tokens. The header also has    │
+│normal commas.                                                                │
+│    # Determine number of header columns                                      │
+│    ncol=len(header)                                                          │
+│    toks=parts                                                                │
+│    # We need to merge tokens into ncol fields by combining pairs where       │
+│numeric parts likely. Approach: iterate tokens and merge until we have ncol   │
+│fields.                                                                       │
+│    fields=[]                                                                 │
+│    i=0                                                                       │
+│    while i<len(toks) and len(fields)<ncol:                                   │
+│        t=toks[i]                                                             │
+│        if len(fields)==0: # time may be like '0' and next '000'              │
+│            if i+1<len(toks) and toks[i+1].isdigit():                         │
+│                fields.append(t+','+toks[i+1])                                │
+│                i+=2                                                          │
+│            else:                                                             │
+│                fields.append(t)                                              │
+│                i+=1                                                          │
+│        else:                                                                 │
+│            # if token looks like a signed number like '-1' and next '783'    │
+│            if (t in ['-1','-2','-3','-4','-5','-6','-7','-8','-9','0','1','2'│
+│,'3','4','5','6','7','8','9'] or (t.startswith('-') and t[1:].isdigit()) ) and│
+│ i+1<len(toks) and toks[i+1].isdigit():                                       │
+│                fields.append(t+','+toks[i+1])                                │
+│                i+=2                                                          │
+│            else:                                                             │
+│                fields.append(t)                                              │
+│                i+=1                                                          │
+│    if len(fields)!=ncol:                                                     │
+│        # fallback: pad                                                       │
+│        fields = (toks + ['']*ncol)[:ncol]                                    │
+│    rows.append(fields)                                                       │
+│                                                                              │
+│# convert to float by replacing comma decimal with dot                        │
+│def tofloat(s):                                                               │
+│    s=s.replace(' ', '').replace('\r','')                                     │
+│    if s=='' or s=='0':                                                       │
+│        return 0.0                                                            │
+│    try:                                                                      │
+│        return float(s.replace(',','.'))                                      │
+│    except:                                                                   │
+│        try:                                                                  │
+│            return float(s)                                                   │
+│        except:                                                               │
+│            return 0.0                                                        │
+│                                                                              │
+│data=[{h:tofloat(row[i]) for i,h in enumerate(header)} for row in rows]       │
+│print('samples',len(data))                                                    │
+│# check timestamps increasing                                                 │
+│times=[d['time'] for d in data]                                               │
+│inc=all(times[i+1]>=times[i] for i in range(len(times)-1))                    │
+│print('time increasing',inc,'first,last',times[0],times[-1])                  │
+│# glance columns                                                              │
+│for k in ['theta_rad','V','steerFL_deg','steerFR_deg','plannerNodes','hasSolut│
+│ion','execCompleted','lateralError','headingError']:                          │
+│    print(k,'sample', [data[i][k] for i in range(0, len(data),                │
+│max(1,len(data)//10))])                                                       │
+│# find ranges where headingError nonzero and steer nonzero                    │
+│bad=[]                                                                        │
+│for i,d in enumerate(data):                                                   │
+│    he=d.get('headingError',0.0)                                              │
+│    s=(d.get('steerFL_deg',0.0)+d.get('steerFR_deg',0.0))/2.0                 │
+│    if abs(he)>0.001 and abs(s)>0.001:                                        │
+│        bad.append((i,d['time'],he,s))                                        │
+│print('found',len(bad),'nonzero pairs, first 10:',bad[:10])                   │
+│# compute sign correlation he * steer                                         │
+│cnt=0;negcnt=0;poscnt=0                                                       │
+│for i,d in enumerate(data):                                                   │
+│    he=d.get('headingError',0.0)                                              │
+│    s=(d.get('steerFL_deg',0.0)+d.get('steerFR_deg',0.0))/2.0                 │
+│    if abs(he)>1e-3 and abs(s)>1e-3:                                          │
+│        cnt+=1                                                                │
+│        if he*s<0: negcnt+=1                                                  │
+│        else: poscnt+=1                                                       │
+│print('cnt',cnt,'neg',negcnt,'pos',poscnt)                                    │
+│# show some rows where mismatch he*s<0                                        │
+│for i,d in enumerate(data):                                                   │
+│    he=d['headingError']; s=(d['steerFL_deg']+d['steerFR_deg'])/2             │
+│    if he*s<0 and abs(he)>1e-3 and abs(s)>1e-3:                               │
+│        print('idx',i,'time',d['time'],'he',he,'steer',s,'theta',d['theta_rad'│
+│],'V',d['V'])                                                                 │
+│        break                                                                 │
+│PY                                                                            │
+│                                                                              │
+│Allow command?                                                                │
+│                                                                              │
+│  ❯ Yes (y)                                                                   │
+│    Yes, always approve this exact command for this session (a)               │
+│    Edit or give feedback (e)                                                 │
+│    No, and keep going (n)                                                    │
+│    No, and stop for now (esc)                                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
