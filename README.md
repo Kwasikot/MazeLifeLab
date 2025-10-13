@@ -88,6 +88,9 @@ It combines:
 ---
 
 ## 📋 Requirements
+We can use inspiration from biology. Such as TAME agent framework - a hierarchical approach to intelligence (M. Levin).
+In this particular work i don't need any car-like system. This is not a goal of the project i mean to build an autopilot.
+The main goal of this project is to simulate collective intelligence, hierarchical agent systems that solves some survival or maybe path planing tasks.
 
 ### Functional
 - Agent can move in a 3D maze  
