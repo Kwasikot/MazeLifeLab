@@ -88,7 +88,9 @@ It combines:
 ---
 
 ## 📋 Requirements
-We can use inspiration from biology. Such as TAME agent framework - a hierarchical approach to intelligence (M. Levin).
+We can use inspiration from biology. Such as [TAG: A Decentralized Framework for Multi-Agent Hierarchical Reinforcement
+Learning](https://arxiv.org/pdf/2502.15425)
+
 In this particular work i don't need any car-like system. This is not a goal of the project i mean to build an autopilot.
 The main goal of this project is to simulate collective intelligence, hierarchical agent systems that solves some survival or maybe path planing tasks.
 
