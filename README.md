@@ -123,7 +123,9 @@ The main goal of this project is to simulate collective intelligence, hierarchic
 - Rapidly-Exploring Random Trees: Progress and Prospects  
 - [Unity ML-Agents](https://github.com/Unity-Technologies/ml-agents)  
 - Turgut et al., *Self-organized flocking in mobile robot swarms*  
-- Trianni & Dorigo, *Self-organisation and communication in groups of simulated robots*  
+- Trianni & Dorigo, *Self-organisation and communication in groups of simulated robots*
+- [Continuous Thought Machines](https://arxiv.org/abs/2505.05522)
+
 
 ---
 
