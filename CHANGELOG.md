@@ -15,12 +15,18 @@ This project follows a research-oriented changelog discipline: changes should be
   - `docs/experiment_001_single_agent.md`
   - `docs/project_memory.md`
   - `docs/schedule_exp_001.md`
+  - `docs/experiment_002_rrt_vs_baselines.md`
 - Added Cursor rule for project memory and changelog discipline:
   - `.cursor/rules/project_memory_and_changelog.mdc`
+- Added Cursor rule for Unity experiment debugging, reproducibility, metrics sanity checks, invariant checks, and visual debugging:
+  - `.cursor/rules/unity_experiment_debugging.mdc`
+- Added decision log for preserving why major research and engineering decisions were made:
+  - `docs/decision_log.md`
 
 ### Changed
 
 - Reframed the project direction toward a reproducible artificial life and maze-navigation research platform.
+- Clarified that `EXP-001 — Single-Agent Navigation Benchmark` is the current active implementation focus before RRT, ML-Agents, multi-agent communication, or Swarm-RRT.
 
 ### Fixed
 
@@ -43,7 +49,8 @@ This project follows a research-oriented changelog discipline: changes should be
   - current implementation may still be prototype-level;
   - deterministic behaviour may be affected by Unity physics;
   - metrics are not yet implemented;
-  - baselines are not yet implemented.
+  - baselines are not yet implemented;
+  - README still describes the broader long-term roadmap and should later be aligned with the staged experiment documents.
 
 ---
 
