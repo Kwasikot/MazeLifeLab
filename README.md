@@ -1,8 +1,9 @@
-# BallPark
+# MazeLifeLab / BallPark
 
+```text
   + - - - + - + - -
-  + - + - + Kwasikot  <br>
-```
+  + - + - + Kwasikot
+
                             )            (
                            /(   (\___/)  )\
                           ( #)  \ ('')| ( #
@@ -15,123 +16,222 @@
                          /   '-, \   / ,-'      ______  \
                 b'ger   /      (//   \\)     __/     /   \
                                             './_____/
-```              
-# The initial goal of the project:
-Make a robots that can learn how to go through the maze.
-I'm using machine learning approach i.e. reinforcement learning and imitation learning to achieve this goal.
-In the first phases of the current project in 2020 than coronavirus was a popular thing I began to work on RRT trees.
-First idea was to create car-like robots that can park in particular slots. At that time this project goal was inspired by my job at that time in the Luxoft company.
-I discovered and implement Rapid Exploring Random Trees. But they  was really stone-like in the machine learning sense.
-So I started to find ways how I can extend the rrt idea. I wrote a little hack that spread the reward across the RRT in the maze.
-When I start to train agents to get a reward like checkpoints in the race. This gave me the initial results.
-But the agents were so dumb. They frequently hit the walls. I dont realise that was the failure related to my not outstanding experience in machine learning.
-I use reinforcement learning instead of imitation learning. 
-For training the bots i'm using a machine learning environment provided by mlagents developers.
-In the end of a day I decided to delete my old repository and start the project from scratch.
-Just rewrite the code, fix bugs implemented in the foundation. 
-It helps also to set new goals for the project. Now i'm fan of the artificial life science.
-According to some experts this is the true path to achieve AGI. 
-
-# Current goal (22/07/2023)
-Idea is to localize and simpilfy the RRT building procces in terms of exploration and number of operations. Get rid of slow runge-kutta calculations. And give agents ability to send sound or light signals for communication using some sort of a language.
-So this would be an imitation of social interaction when agents naturally find the way to communicate with each other and how to find a way through the maze.
-
-![image](https://github.com/Quasikot/BallPark/blob/main/images/Screenshot%202023-07-27%20112045.png?raw=true)
-  
-Литература:
-* Nonlinear Dynamics And Chaos With Applications To Physics, Biology, Chemistry, And Engineering by Steven H. Strogatz
-* Rapidly-Exploring Random Trees: Progress and Prospects
-* Unity Machine Learning Agents
-* Turgut, A. E., Çelikkanat, H., Gökçe, F., & Şahin, E. (2008). Self-organized flocking in mobile robot swarms. Swarm Intelligence, 2, 97–120.
-* Trianni, V., & Dorigo, M. (2006). Self-organisation and communication in groups of simulated and physical robots. Biological Cybernetics, 95, 213–231.
-* Baldassarre, G., Trianni, V., Bonani, M., Mondada, F., Dorigo, M., & Nolfi, S. (2007). Self-organized coordinated motion in groups of physically connected robots
-* [Self-Organization and Artificial Life](https://direct.mit.edu/artl/article/26/3/391/93243/Self-Organization-and-Artificial-Life)
-  
-  
-# 🚗 Maze AI Project
+```
 
 ## 🎯 Project Overview
-This project is a revival of my old **BallPark** idea, but this time powered by **AI and ML-Agents**.  
-The goal is to explore algorithms of **path planning, reinforcement learning, and artificial life** in maze environments.  
 
-It combines:  
-- 🌀 Procedural maze generation (`MazeGen.cs`)  
-- 🌳 Path planning via **Rapidly-Exploring Random Trees (RRT)** (`Rrt.cs`)  
-- 🤖 Intelligent agents that can **scan, learn, and communicate** (`AgentControl.cs`)  
-- 🧠 Integration with **Unity ML-Agents** (reinforcement learning, imitation learning)  
+**MazeLifeLab** is a revival of my old **BallPark** idea.
+
+The long-term goal is to build a small research-oriented Unity laboratory for studying:
+
+- procedural maze generation;
+- path planning;
+- reinforcement learning;
+- local sensing;
+- artificial life;
+- multi-agent exploration;
+- communication and collective intelligence.
+
+The project combines:
+
+- 🌀 Procedural maze generation (`MazeGen.cs`)
+- 🌳 Path planning via **Rapidly-Exploring Random Trees** (`Rrt.cs`)
+- 🤖 Agents that can scan, navigate, learn, and eventually communicate (`AgentControl.cs`)
+- 🧠 Future integration with **Unity ML-Agents**
+
+The project should be developed as a **reproducible research platform**, not only as a Unity prototype.
+
+---
+
+## 🔬 Current Active Research Track
+
+The current active implementation focus is:
+
+```text
+EXP-001 — Single-Agent Navigation Benchmark
+```
+
+The purpose of EXP-001 is to establish a stable experimental foundation before adding advanced AI features.
+
+Current focus:
+
+- deterministic maze generation with seeds;
+- start and goal positions;
+- single-agent episode loop;
+- RandomWalk baseline;
+- WallFollower baseline;
+- metrics logging;
+- CSV output;
+- reproducible experiment runs.
+
+Out of scope for the current stage:
+
+- ML-Agents training;
+- neural networks;
+- multi-agent coordination;
+- sound/light communication;
+- pheromone systems;
+- emergent language;
+- Swarm-RRT.
+
+These are important future directions, but they should not be implemented before the basic benchmark is reproducible and measurable.
+
+Key documents:
+
+- [`docs/research_agenda.md`](docs/research_agenda.md) — long-term research direction.
+- [`docs/experiment_001_single_agent.md`](docs/experiment_001_single_agent.md) — current experiment protocol.
+- [`docs/schedule_exp_001.md`](docs/schedule_exp_001.md) — practical implementation schedule.
+- [`docs/project_memory.md`](docs/project_memory.md) — compact current project context.
+- [`docs/experiment_002_rrt_vs_baselines.md`](docs/experiment_002_rrt_vs_baselines.md) — future RRT comparison protocol.
+- [`docs/decision_log.md`](docs/decision_log.md) — why major decisions were made.
+- [`CHANGELOG.md`](CHANGELOG.md) — notable changes and research notes.
+
+---
+
+## 🧭 Research Direction
+
+The long-term research ladder is:
+
+```text
+EXP-001 — Single-Agent Navigation Benchmark
+    ↓
+EXP-002 — RRT vs Baselines
+    ↓
+EXP-003 — Local RRT Under Partial Observability
+    ↓
+EXP-004 — Multi-Agent Exploration Without Communication
+    ↓
+EXP-005 — Multi-Agent Exploration With Simple Signals
+    ↓
+EXP-006 — Swarm-RRT / Distributed Search Trees
+```
+
+The most original long-term idea is **Swarm-RRT**:
+
+> Can a population of locally perceiving agents collectively approximate a search tree through movement, communication, and environmental memory?
+
+This connects the project to artificial life, swarm robotics, embodied cognition, distributed planning, and collective intelligence.
 
 ---
 
 ## 🚀 MVP Plan
 
 ### Phase 1. Core mechanics
-- [x] Simple car/agent movement in Unity  
-- [x] Basic procedural maze generation  
-- [ ] Manual control mode (keyboard/joystick)  
-- [ ] Visualize walls and trajectories  
 
-### Phase 2. Path planner
-- [ ] Implement RRT planner (without Runge-Kutta integration at first)  
-- [ ] Visualize search tree in real-time  
-- [ ] Switch modes: **Manual ↔ RRT**  
+- [x] Simple car/agent movement in Unity
+- [x] Basic procedural maze generation
+- [ ] Deterministic maze seeds
+- [ ] Start and goal positions
+- [ ] Episode success / timeout loop
+- [ ] Visualise walls and trajectories
 
-### Phase 3. AI Integration
-- [ ] Connect **Unity ML-Agents** (Python backend + Unity simulation)  
-- [ ] Define basic reward (e.g. reaching checkpoints, avoiding walls)  
-- [ ] Train an agent to navigate the maze  
+### Phase 2. EXP-001 Benchmark
 
-### Phase 4. Multi-agent experiments
-- [ ] Run multiple agents simultaneously  
-- [ ] Add simple communication (light / sound signals)  
-- [ ] Compare strategies: **RRT vs RL vs emergent swarm behavior**  
+- [ ] RandomWalk baseline
+- [ ] WallFollower baseline
+- [ ] Metrics logger
+- [ ] CSV output
+- [ ] Batch runner across multiple maze seeds
+- [ ] Reproducibility check
+
+### Phase 3. Path planning
+
+- [ ] Refactor RRT into a reusable planner
+- [ ] Visualise search tree in real time
+- [ ] Compare RandomWalk vs WallFollower vs RRT
+- [ ] Record RRT-specific metrics
+
+### Phase 4. AI Integration
+
+- [ ] Connect Unity ML-Agents
+- [ ] Define basic reward functions
+- [ ] Train an agent to navigate the maze
+- [ ] Compare RL with classical baselines
+
+### Phase 5. Multi-agent artificial life experiments
+
+- [ ] Run multiple agents simultaneously
+- [ ] Add simple communication signals
+- [ ] Add environmental memory / pheromone-like fields
+- [ ] Compare no-communication vs communication conditions
+- [ ] Explore Swarm-RRT-like distributed search
 
 ---
 
 ## 📋 Requirements
-We can use inspiration from biology. Such as [TAG: A Decentralized Framework for Multi-Agent Hierarchical Reinforcement
-Learning](https://arxiv.org/pdf/2502.15425)
 
-In this particular work i don't need any car-like system. This is not a goal of the project i mean to build an autopilot.
-The main goal of this project is to simulate collective intelligence, hierarchical agent systems that solves some survival or maybe path planing tasks.
+The project can draw inspiration from biology, swarm robotics, active inference, distributed cognition, and artificial life.
+
+This project is **not primarily an autopilot project**. A car-like system may be used as a convenient embodiment, but the core goal is broader:
+
+> simulate navigation, exploration, communication, and collective intelligence in procedural environments.
 
 ### Functional
-- Agent can move in a 3D maze  
-- Maze is procedurally generated  
-- Path planning via RRT  
-- RL training with ML-Agents  
-- Switchable modes: Manual / RRT / RL  
-- Multi-agent support with basic communication  
+
+- Agent can move in a 3D maze.
+- Maze is procedurally generated.
+- Maze generation can be reproduced with seeds.
+- Experiments can be run as episodes.
+- Metrics can be logged to CSV.
+- Baseline agents can be compared.
+- Future stages may include RRT, RL, multi-agent support, and communication.
 
 ### Non-functional
-- Runs in real-time on an average laptop  
-- Modular code structure (Agents / Maze / Planners)  
-- Documented workflow in README  
-- Simple visualization with Unity Gizmos and Debug.DrawLine  
+
+- Runs in real time on an average laptop.
+- Modular code structure: `Maze`, `Agents`, `Planning`, `Experiments`, `Communication`.
+- Documented workflow in `docs/`.
+- Simple visualisation with Unity Gizmos and `Debug.DrawLine`.
+- Reproducibility is preferred over visual complexity.
 
 ---
 
 ## 🛠 Tech Stack
-- **Unity 2022+**  
-- **C#** (agents, maze, planners)  
-- **Python 3.10+** (training logic with PyTorch via ML-Agents)  
-- **ML-Agents Toolkit**  
+
+- **Unity 2022+**
+- **C#** for agents, maze generation, planners, and experiment runners
+- **Python 3.10+** for future training logic
+- **Unity ML-Agents Toolkit** for future reinforcement learning experiments
 
 ---
 
-## 📚 References
-- Strogatz, *Nonlinear Dynamics and Chaos*  
-- Rapidly-Exploring Random Trees: Progress and Prospects  
-- [Unity ML-Agents](https://github.com/Unity-Technologies/ml-agents)  
-- Turgut et al., *Self-organized flocking in mobile robot swarms*  
-- Trianni & Dorigo, *Self-organisation and communication in groups of simulated robots*
+## 📚 References and Inspirations
+
+- Strogatz, Steven H. *Nonlinear Dynamics and Chaos: With Applications to Physics, Biology, Chemistry, and Engineering*.
+- LaValle, Steven M. *Rapidly-Exploring Random Trees: Progress and Prospects*.
+- [Unity ML-Agents Toolkit](https://github.com/Unity-Technologies/ml-agents)
+- Turgut, A. E., Çelikkanat, H., Gökçe, F., & Şahin, E. (2008). *Self-organized flocking in mobile robot swarms*. Swarm Intelligence, 2, 97–120.
+- Trianni, V., & Dorigo, M. (2006). *Self-organisation and communication in groups of simulated and physical robots*. Biological Cybernetics, 95, 213–231.
+- Baldassarre, G., Trianni, V., Bonani, M., Mondada, F., Dorigo, M., & Nolfi, S. (2007). *Self-organized coordinated motion in groups of physically connected robots*.
+- [Self-Organization and Artificial Life](https://direct.mit.edu/artl/article/26/3/391/93243/Self-Organization-and-Artificial-Life)
 - [Continuous Thought Machines](https://arxiv.org/abs/2505.05522)
 
+More detailed references may be moved to a separate `docs/references.md` file later.
 
 ---
 
 ## 🌌 Vision
-The long-term vision is to create a **virtual lab of artificial life**:  
-- Agents that evolve navigation strategies  
-- Communication and cooperation in swarms  
-- A bridge between **AI, robotics, and computational physics**  
- 
+
+The long-term vision is to create a **virtual lab of artificial life**:
+
+- agents that evolve navigation strategies;
+- agents that communicate and cooperate in swarms;
+- environmental memory and signal fields;
+- distributed search and planning;
+- a bridge between AI, robotics, artificial life, and computational physics.
+
+The first milestone is intentionally modest:
+
+> make a single-agent benchmark reproducible, measurable, and reviewable.
+
+Only after that should the project move toward RRT, ML-Agents, communication, and Swarm-RRT.
+
+---
+
+## Historical Note
+
+The initial idea of the project was to make robots learn how to go through a maze using reinforcement learning and imitation learning.
+
+In the first phase around 2020, the project explored car-like robots, parking-like tasks, and Rapidly-Exploring Random Trees. The early RRT idea was useful but too rigid from a machine-learning and artificial-life perspective.
+
+The current direction is more ambitious: use maze worlds as a minimal laboratory for studying artificial life, collective intelligence, and distributed exploration.
