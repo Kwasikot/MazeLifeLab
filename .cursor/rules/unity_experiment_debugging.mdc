@@ -1,0 +1,285 @@
+---
+description: Unity experiment debugging, reproducibility, and validation rules for MazeLifeLab
+globs:
+  - "Assets/Scripts/**/*.cs"
+  - "ProjectSettings/**/*"
+  - "Packages/**/*"
+  - "docs/**/*.md"
+alwaysApply: false
+---
+
+# MazeLifeLab Cursor Rules: Unity Experiment Debugging
+
+Use these rules when modifying Unity code, experiment runners, agents, maze generation, metrics, or planning algorithms.
+
+MazeLifeLab is a research platform. Debugging must support reproducibility, measurement, and reviewability.
+
+---
+
+## 1. Debugging Principle
+
+Never fix a Unity behaviour bug only by visual guessing.
+
+For every non-trivial bug, try to create at least one of the following:
+
+- a deterministic reproduction seed;
+- a logged episode trace;
+- an invariant check;
+- a Play Mode test;
+- an Edit Mode test;
+- a debug visualisation layer;
+- a metric sanity check.
+
+---
+
+## 2. Reproduction First
+
+Before changing logic, identify the smallest reproduction case.
+
+Record:
+
+```text
+maze_seed
+algorithm
+scene_name
+active_experiment
+step_limit
+observed_failure
+expected_behaviour
+```
+
+If the issue cannot be reproduced, document that limitation in the implementation notes or changelog.
+
+---
+
+## 3. Unity Determinism Rule
+
+Use deterministic seeds for maze generation and agent decision randomness where possible.
+
+Avoid relying on uncontrolled random calls.
+
+If using Unity randomness, ensure the seed is explicitly set for experiment runs.
+
+If Unity physics introduces non-determinism, document it in:
+
+- `CHANGELOG.md`
+- `docs/project_memory.md` if it affects experiment assumptions
+
+---
+
+## 4. Invariant Checks
+
+Prefer explicit runtime checks for important assumptions.
+
+Examples:
+
+```text
+start cell is inside maze
+goal cell is inside maze
+start cell != goal cell
+goal is reachable by maze graph
+agent is not spawned inside a wall
+episode has exactly one termination reason
+metrics row is written once per episode
+coverage_percent is between 0 and 100
+steps is non-negative
+path_length is non-negative
+```
+
+If an invariant fails, log a clear warning or error with experiment context.
+
+---
+
+## 5. Metrics Sanity Rule
+
+When adding or changing metrics, add sanity checks.
+
+Examples of invalid values:
+
+```text
+success == true but termination_reason != success
+steps < 0
+coverage_percent < 0
+coverage_percent > 100
+path_length < 0
+algorithm is empty
+maze_seed is missing
+success == true and steps == 0 unless start equals goal
+```
+
+Do not silently write impossible values to CSV.
+
+---
+
+## 6. Debug Visualisation Rule
+
+For navigation and planning systems, provide simple visual debugging when possible.
+
+Useful overlays:
+
+- maze walls;
+- start cell;
+- goal cell;
+- agent trajectory;
+- visited cells;
+- raycast sensors;
+- collision points;
+- RRT tree;
+- planned path;
+- current waypoint.
+
+Debug visualisation should be toggleable.
+
+Do not mix visualisation code deeply into core algorithm code if a separate visualiser is practical.
+
+---
+
+## 7. Test Strategy
+
+Prefer three layers of validation:
+
+### Edit Mode Tests
+
+Use for pure logic:
+
+- maze seed determinism;
+- maze graph validity;
+- wall data structure validity;
+- metric formatting;
+- CSV row generation.
+
+### Play Mode Tests
+
+Use for Unity runtime behaviour:
+
+- episode starts correctly;
+- timeout works;
+- success condition works;
+- agent reset works;
+- collision tracking works.
+
+### Manual Visual Inspection
+
+Use for early-stage visual systems, but do not rely on it alone.
+
+---
+
+## 8. Logging Rule
+
+Logs should be structured and useful.
+
+A good experiment log includes:
+
+```text
+experiment_id
+maze_seed
+algorithm
+episode_id
+step
+state
+warning_or_error
+```
+
+Avoid noisy per-frame logs unless debugging a specific issue.
+
+For high-frequency events, prefer a small ring buffer or summary counters.
+
+---
+
+## 9. Failure Handling Rule
+
+Experiments should fail loudly and informatively.
+
+Prefer explicit termination reasons:
+
+```text
+success
+timeout
+invalid_start
+invalid_goal
+agent_stuck
+planner_failed
+metrics_error
+unknown_error
+```
+
+Do not let episodes run forever.
+
+---
+
+## 10. CSV Output Rule
+
+CSV output should be machine-readable and stable.
+
+Rules:
+
+- write a header row;
+- write one row per episode;
+- keep column order stable;
+- use `NA` or empty fields for non-applicable planner-specific metrics;
+- avoid locale-dependent decimal formatting;
+- do not mix debug prose into CSV values.
+
+---
+
+## 11. RRT Debugging Rule
+
+For RRT and future planners, separate:
+
+```text
+planning success
+```
+
+from
+
+```text
+episode success
+```
+
+Record both if applicable.
+
+RRT-specific debugging should include:
+
+```text
+nodes_created
+edges_created
+iterations
+samples_rejected
+collision_checks
+planning_time_ms
+path_found
+path_length
+waypoint_count
+```
+
+---
+
+## 12. Do Not Hide Scientific Limitations
+
+If a result depends on full map access, global sampling, oracle information, or hand-coded heuristics, label it clearly.
+
+Never describe such behaviour as emergent intelligence.
+
+Use cautious language:
+
+- baseline;
+- heuristic;
+- planner;
+- oracle baseline;
+- full-observability condition;
+- partial-observability condition;
+- not yet validated.
+
+---
+
+## 13. Debugging Completion Checklist
+
+A bug fix or experiment implementation is reviewable when:
+
+- reproduction case is known or limitation is documented;
+- relevant seed/config is recorded;
+- metrics still make sense;
+- no unrelated systems were added;
+- visual behaviour was checked if applicable;
+- changelog was updated for meaningful changes;
+- project memory was updated only if status/assumptions changed.
