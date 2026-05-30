@@ -1,0 +1,174 @@
+---
+description: Research decision gates, fallback routes, and anti-tunnel-vision rules for MazeLifeLab
+globs:
+  - "docs/**/*.md"
+  - "Assets/Scripts/**/*.cs"
+alwaysApply: true
+---
+
+# MazeLifeLab Cursor Rules: Research Decision Gates
+
+MazeLifeLab should evolve through disciplined experiments, not through rigid attachment to one algorithmic idea.
+
+Swarm-RRT is a promising long-term hypothesis, not a guaranteed destination.
+
+---
+
+## 1. Read Before Major Direction Changes
+
+Before proposing a new algorithm, major feature, experiment switch, or architecture change, read:
+
+```text
+docs/research_decision_gates.md
+docs/project_memory.md
+docs/research_agenda.md
+```
+
+If the change affects the active experiment, also read the current experiment protocol.
+
+For now:
+
+```text
+docs/experiment_001_single_agent.md
+```
+
+---
+
+## 2. Do Not Implicitly Switch Experiments
+
+Do not change the active experiment without explicit maintainer approval.
+
+The current default active experiment is:
+
+```text
+EXP-001 — Single-Agent Navigation Benchmark
+```
+
+Do not start implementing EXP-002, EXP-003, multi-agent communication, ML-Agents, or Swarm-RRT unless explicitly requested.
+
+---
+
+## 3. Decision Gate Rule
+
+After completing a meaningful experiment milestone, ask:
+
+```text
+1. Is it reproducible?
+2. Are metrics trustworthy?
+3. Does it beat or clarify baselines?
+4. Are failure modes understood?
+5. Is the next experiment justified?
+6. Should we continue, iterate, simplify, pivot, pause, or abandon this path?
+```
+
+Do not automatically proceed to the next experiment just because it is listed in the roadmap.
+
+---
+
+## 4. Fallback-Aware Feature Rule
+
+When proposing a feature, answer:
+
+```text
+Which experiment does this support?
+Which baseline will it be compared against?
+Which metric will detect improvement?
+What is the fallback if it fails?
+```
+
+If these questions cannot be answered, postpone the feature.
+
+---
+
+## 5. Anti-Tunnel-Vision Rule
+
+Do not force all results to support Swarm-RRT.
+
+Possible valid outcomes include:
+
+- RRT is useful only as a baseline.
+- A* or BFS is a better classical planning baseline.
+- Local RRT is too complex and should be paused.
+- Communication does not improve exploration.
+- Stigmergic memory is more useful than explicit communication.
+- Multi-agent systems create more overhead than benefit.
+- A simpler planning benchmark is more valuable than a complex artificial life demo.
+
+Negative or disappointing results are still scientifically useful if measured carefully.
+
+---
+
+## 6. Pivot Discipline
+
+A pivot is allowed only if documented.
+
+When pivoting, update:
+
+```text
+docs/decision_log.md
+docs/project_memory.md
+CHANGELOG.md
+```
+
+The decision log should explain:
+
+- context;
+- decision;
+- reasoning;
+- alternatives considered;
+- risks;
+- related files.
+
+---
+
+## 7. Keep Interfaces Replaceable
+
+Fallback routes require modular code.
+
+Do not hard-wire one algorithm into the whole project.
+
+Keep these systems separable:
+
+```text
+Maze generation
+Agent control
+Planner interface
+Experiment runner
+Metrics logger
+Debug visualisation
+Communication system
+Training system
+```
+
+Prefer replaceable interfaces for algorithms and policies.
+
+---
+
+## 8. Baseline Skepticism
+
+A complex algorithm is not valuable merely because it is complex.
+
+Compare against the relevant baseline:
+
+- RandomWalk for weak baseline.
+- WallFollower for simple local heuristic.
+- A* / BFS / Dijkstra for full-map planning.
+- RRT_Global for full-observability sampling.
+- Local RRT for partial-observability planning.
+- No-communication multi-agent condition for communication studies.
+
+If a complex method does not beat or clarify a simple baseline, document that honestly.
+
+---
+
+## 9. Current Guardrail
+
+For the current stage, the correct fallback-aware behaviour is:
+
+```text
+Finish EXP-001 first.
+```
+
+If EXP-001 becomes unstable, simplify it.
+
+Do not escape into RRT, ML-Agents, or multi-agent work to avoid fixing reproducibility and metrics.
