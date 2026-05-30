@@ -197,6 +197,7 @@ This project is **not primarily an autopilot project**. A car-like system may be
 
 ## 📚 References and Inspirations
 
+- Mitchell, Melanie. *Complexity: A Guided Tour*. Oxford University Press, 2009.
 - Strogatz, Steven H. *Nonlinear Dynamics and Chaos: With Applications to Physics, Biology, Chemistry, and Engineering*.
 - LaValle, Steven M. *Rapidly-Exploring Random Trees: Progress and Prospects*.
 - [Unity ML-Agents Toolkit](https://github.com/Unity-Technologies/ml-agents)
