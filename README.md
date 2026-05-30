@@ -82,6 +82,7 @@ Key documents:
 - [`docs/experiment_001_single_agent.md`](docs/experiment_001_single_agent.md) — current experiment protocol.
 - [`docs/schedule_exp_001.md`](docs/schedule_exp_001.md) — practical implementation schedule.
 - [`docs/project_memory.md`](docs/project_memory.md) — compact current project context.
+- [`docs/hardware_and_algorithm_tiers.md`](docs/hardware_and_algorithm_tiers.md) — hardware profiles and algorithm scaling tiers.
 - [`docs/experiment_002_rrt_vs_baselines.md`](docs/experiment_002_rrt_vs_baselines.md) — future RRT comparison protocol.
 - [`docs/decision_log.md`](docs/decision_log.md) — why major decisions were made.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable changes and research notes.
@@ -111,6 +112,50 @@ The most original long-term idea is **Swarm-RRT**:
 > Can a population of locally perceiving agents collectively approximate a search tree through movement, communication, and environmental memory?
 
 This connects the project to artificial life, swarm robotics, embodied cognition, distributed planning, and collective intelligence.
+
+---
+
+## 🖥️ Hardware Profiles
+
+MazeLifeLab is expected to be tested on two hardware tiers:
+
+### Laptop baseline
+
+```text
+HP Pavilion laptop
+CPU: AMD Ryzen 5
+GPU: NVIDIA RTX 3050 laptop GPU
+```
+
+Used for:
+
+- EXP-001;
+- Unity Editor development;
+- deterministic seed testing;
+- simple baselines;
+- small RRT debugging;
+- visual inspection.
+
+### Desktop extended
+
+```text
+Desktop PC
+CPU: Intel Core i7-14700KF
+RAM: 32 GB
+Storage: 2 TB SSD
+GPU: NVIDIA RTX 5070 Ti 16 GB
+```
+
+Used for:
+
+- larger seed batches;
+- RRT/RRT* parameter sweeps;
+- ML-Agents training;
+- multi-agent experiments;
+- population-level artificial life simulations;
+- heavier logging and batch analysis.
+
+See [`docs/hardware_and_algorithm_tiers.md`](docs/hardware_and_algorithm_tiers.md) for the detailed hardware-aware algorithm roadmap.
 
 ---
 
@@ -178,7 +223,8 @@ This project is **not primarily an autopilot project**. A car-like system may be
 
 ### Non-functional
 
-- Runs in real time on an average laptop.
+- Runs in real time on the laptop baseline for EXP-001-scale experiments.
+- Can scale to the desktop extended profile for heavier experiments.
 - Modular code structure: `Maze`, `Agents`, `Planning`, `Experiments`, `Communication`.
 - Documented workflow in `docs/`.
 - Simple visualisation with Unity Gizmos and `Debug.DrawLine`.
