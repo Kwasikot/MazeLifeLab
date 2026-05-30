@@ -1,0 +1,214 @@
+---
+description: Maintain project memory, changelog discipline, and research context for MazeLifeLab
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# MazeLifeLab Cursor Rules: Project Memory and Changelog
+
+You are working on MazeLifeLab, a research-oriented Unity project for artificial life, maze navigation, multi-agent exploration, communication, and collective intelligence.
+
+The project must be developed as a reproducible research platform, not as a chaotic Unity prototype.
+
+## 1. Core Principle
+
+Every code change must support a documented research goal, experiment, metric, or baseline.
+
+Do not add features only because they seem interesting. Connect them to:
+
+- `docs/research_agenda.md`
+- `docs/experiment_001_single_agent.md`
+- `docs/project_memory.md`
+- `CHANGELOG.md`
+
+## 2. Project Memory Rule
+
+Before making meaningful changes, read `docs/project_memory.md`.
+
+Use it to understand:
+
+- current active experiment;
+- current implementation focus;
+- current assumptions;
+- current open questions;
+- current status of metrics and baselines;
+- what must not be changed yet.
+
+After a meaningful change, update `docs/project_memory.md` if the change affects:
+
+- active experiment;
+- experiment status;
+- implemented baselines;
+- metrics schema;
+- architecture;
+- known issues;
+- next steps;
+- research assumptions.
+
+Do not put long implementation details in project memory. Keep it concise and useful for future sessions.
+
+## 3. Changelog Rule
+
+Every meaningful change must update `CHANGELOG.md`.
+
+Use the following format:
+
+```markdown
+## [Unreleased]
+
+### Added
+- ...
+
+### Changed
+- ...
+
+### Fixed
+- ...
+
+### Research Notes
+- Experiment: EXP-001 Single-Agent Navigation Benchmark
+- Metrics impacted: ...
+- Scientific reason: ...
+- Risks / limitations: ...
+```
+
+If `CHANGELOG.md` does not exist, create it.
+
+Do not use the changelog as a dump of every tiny edit. Record user-visible, research-visible, or architecture-visible changes.
+
+## 4. Experiment Discipline
+
+At any given time, prefer one active experiment.
+
+Current default active experiment:
+
+```text
+EXP-001 — Single-Agent Navigation Benchmark
+```
+
+Do not introduce multi-agent logic, communication, pheromone fields, ML-Agents training, or emergent language while implementing EXP-001 unless explicitly requested.
+
+EXP-001 focuses on:
+
+- deterministic maze seed;
+- start and goal positions;
+- single-agent episode loop;
+- random-walk baseline;
+- wall-following baseline;
+- metrics logging;
+- reproducible CSV output.
+
+## 5. PR / Commit Summary Rule
+
+When preparing a commit or PR description, include:
+
+```markdown
+### Summary
+What changed?
+
+### Research Context
+Which experiment or hypothesis does this support?
+
+### Metrics Impacted
+Which metrics were added, changed, or affected?
+
+### Risks
+What could be wrong or fragile?
+
+### Validation
+How was it tested?
+```
+
+## 6. Architecture Rule
+
+Prefer small, modular additions over rewriting old prototype scripts.
+
+Recommended folders:
+
+```text
+Assets/Scripts/Maze/
+Assets/Scripts/Agents/
+Assets/Scripts/Planning/
+Assets/Scripts/Communication/
+Assets/Scripts/Experiments/
+```
+
+For EXP-001, prefer changes under:
+
+```text
+Assets/Scripts/Maze/
+Assets/Scripts/Agents/
+Assets/Scripts/Experiments/
+```
+
+Avoid touching communication, swarm, ML-Agents, and advanced planning modules until later experiments.
+
+## 7. Metrics Rule
+
+Do not implement agent behaviour without thinking about measurement.
+
+For EXP-001, the minimum metrics are:
+
+```text
+episode_id
+maze_seed
+algorithm
+success
+steps
+collisions
+path_length
+coverage_percent
+termination_reason
+```
+
+Any change to metric names or meanings must be reflected in:
+
+- `docs/experiment_001_single_agent.md`
+- `docs/project_memory.md`
+- `CHANGELOG.md`
+
+## 8. Reproducibility Rule
+
+The same maze seed, algorithm, and configuration should produce reproducible results as much as Unity physics allows.
+
+When determinism is imperfect, document the limitation in `docs/project_memory.md` and `CHANGELOG.md`.
+
+## 9. Avoid Scope Creep
+
+Do not add these during EXP-001 unless explicitly requested:
+
+- ML-Agents training;
+- neural networks;
+- multi-agent coordination;
+- pheromone systems;
+- sound/light communication;
+- emergent language;
+- hierarchical agents;
+- complex UI;
+- large refactors.
+
+## 10. Scientific Skepticism Rule
+
+Do not claim that an agent is intelligent, emergent, or biologically realistic just because it works visually.
+
+Prefer cautious language:
+
+- “baseline behaviour”;
+- “navigation heuristic”;
+- “partial observability”;
+- “candidate communication mechanism”;
+- “requires measurement”;
+- “not yet validated”.
+
+## 11. Definition of a Good Change
+
+A good change is:
+
+- small;
+- reproducible;
+- connected to an experiment;
+- measurable;
+- documented;
+- easy to review;
+- not mixed with unrelated changes.
