@@ -85,6 +85,7 @@ Key documents:
 - [`docs/hardware_and_algorithm_tiers.md`](docs/hardware_and_algorithm_tiers.md) — hardware profiles and algorithm scaling tiers.
 - [`docs/experiment_002_rrt_vs_baselines.md`](docs/experiment_002_rrt_vs_baselines.md) — future RRT comparison protocol.
 - [`docs/theory_of_mind_late_stage.md`](docs/theory_of_mind_late_stage.md) — late-stage Theory of Mind / social cognition roadmap.
+- [`docs/intelligence_as_dynamic_stability.md`](docs/intelligence_as_dynamic_stability.md) — long-term intelligence-as-dynamic-stability research framing.
 - [`docs/decision_log.md`](docs/decision_log.md) — why major decisions were made.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable changes and research notes.
 
@@ -115,6 +116,8 @@ The most original long-term idea is **Swarm-RRT**:
 This connects the project to artificial life, swarm robotics, embodied cognition, distributed planning, and collective intelligence.
 
 A later research direction may study operational Theory of Mind-like mechanisms, such as other-agent state estimation and knowledge-state estimation, only after multi-agent baselines, communication metrics, and environmental or group memory are established. See [`docs/theory_of_mind_late_stage.md`](docs/theory_of_mind_late_stage.md).
+
+A broader long-term research framing treats intelligence as dynamic stability: agents become more capable by transforming local perception into memory, memory into prediction, prediction into action, and action into collective adaptive structure. See [`docs/intelligence_as_dynamic_stability.md`](docs/intelligence_as_dynamic_stability.md).
 
 ---
 
