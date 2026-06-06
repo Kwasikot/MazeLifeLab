@@ -24,12 +24,15 @@ This project follows a research-oriented changelog discipline: changes should be
   - `docs/decision_log.md`
 - Added late-stage Theory of Mind research documentation:
   - `docs/theory_of_mind_late_stage.md`
+- Added long-term intelligence-as-dynamic-stability research framing:
+  - `docs/intelligence_as_dynamic_stability.md`
 
 ### Changed
 
 - Reframed the project direction toward a reproducible artificial life and maze-navigation research platform.
 - Clarified that `EXP-001 — Single-Agent Navigation Benchmark` is the current active implementation focus before RRT, ML-Agents, multi-agent communication, or Swarm-RRT.
 - Clarified that Theory of Mind, self-state modelling, social cognition, and knowledge-state estimation are late-stage research directions, not implementation tasks for EXP-001 or EXP-002.
+- Clarified a future operational framing of intelligence as dynamic stability, viability maintenance, agent-relative Umwelt, prediction-action loops, adaptive randomness, and symbiotic composition of agent capabilities.
 
 ### Fixed
 
@@ -46,15 +49,16 @@ This project follows a research-oriented changelog discipline: changes should be
   - metrics logging;
   - CSV output;
   - reproducibility.
-- Metrics impacted: none yet; late-stage social-cognition metrics are documented but not implemented.
-- Scientific reason: establish a reproducible baseline before adding RRT, ML-Agents, multi-agent communication, environmental memory, social state estimation, or Theory of Mind-like mechanisms.
+- Metrics impacted: none yet; late-stage social-cognition and dynamic-stability metrics are documented but not implemented.
+- Scientific reason: establish a reproducible baseline before adding RRT, ML-Agents, multi-agent communication, environmental memory, social state estimation, Theory of Mind-like mechanisms, viability-based navigation, or intelligence-as-dynamic-stability layers.
 - Risks / limitations:
   - current implementation may still be prototype-level;
   - deterministic behaviour may be affected by Unity physics;
   - metrics are not yet implemented;
   - baselines are not yet implemented;
   - README still describes the broader long-term roadmap and should later be aligned with the staged experiment documents;
-  - Theory of Mind terminology may cause scope creep unless kept as cautious late-stage documentation only.
+  - Theory of Mind terminology may cause scope creep unless kept as cautious late-stage documentation only;
+  - intelligence-as-dynamic-stability terminology may cause scope creep unless kept operational, measurable, and explicitly future-stage.
 
 ---
 
