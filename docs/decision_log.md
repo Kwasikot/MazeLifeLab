@@ -37,6 +37,50 @@ What could go wrong?
 
 ---
 
+## 2026-06-06 — Postpone Theory of Mind to late-stage experiments
+
+### Context
+
+MazeLifeLab has a long-term research interest in multi-agent intelligence, social cognition, sense of self, other-agent modelling, communication, environmental memory, and collective search. These ideas are scientifically interesting, but they can easily create scope creep if introduced before the project has reproducible single-agent benchmarks, RRT comparisons, multi-agent baselines, communication metrics, and environmental memory mechanisms.
+
+### Decision
+
+Treat Theory of Mind as a late-stage research direction only. It should not be implemented during `EXP-001 — Single-Agent Navigation Benchmark` or `EXP-002 — RRT vs Baselines`.
+
+The project may document a future ladder from reactive agents to self-state, agent-local memory, other-agent state estimation, knowledge-state estimation, intention estimation, and minimal operational Theory of Mind, but this ladder remains documentation until the prerequisites exist.
+
+### Reasoning
+
+Theory of Mind-like mechanisms are only scientifically meaningful in MazeLifeLab if they are operationalised through measurable behaviour: prediction of other agents, estimation of knowledge asymmetry, selective communication, reduced redundant exploration, improved division of labour, and better collective search under partial observability.
+
+Introducing grand cognitive labels too early would weaken the research discipline of the project. The safer approach is to use cautious terms such as `AgentSelfState`, `AgentMemory`, `OtherAgentTracker`, `SocialStateEstimator`, `SharedMap`, and `GroupMemory`.
+
+### Alternatives Considered
+
+- Start implementing a `TheoryOfMindAgent` immediately.
+- Add self-awareness or consciousness terminology to the agent architecture.
+- Ignore Theory of Mind entirely until much later.
+- Document the direction now but explicitly postpone implementation.
+
+The selected option is to document the direction now, while adding guardrails against premature implementation.
+
+### Risks / Limitations
+
+- The terminology may still attract scope creep.
+- Future agents may appear more cognitively sophisticated than they really are if metrics are weak.
+- Knowledge-state and intention-estimation metrics will require careful definitions.
+- The project must avoid claiming human-like psychology, consciousness, or real Theory of Mind.
+
+### Related Files
+
+- `docs/theory_of_mind_late_stage.md`
+- `docs/research_agenda.md`
+- `docs/project_memory.md`
+- `.cursor/rules/project_memory_and_changelog.mdc`
+- `.cursor/rules/research_decision_gates.mdc`
+
+---
+
 ## 2026-05-30 — Treat MazeLifeLab as a research platform
 
 ### Context
