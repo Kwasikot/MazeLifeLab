@@ -84,6 +84,7 @@ Key documents:
 - [`docs/project_memory.md`](docs/project_memory.md) — compact current project context.
 - [`docs/hardware_and_algorithm_tiers.md`](docs/hardware_and_algorithm_tiers.md) — hardware profiles and algorithm scaling tiers.
 - [`docs/experiment_002_rrt_vs_baselines.md`](docs/experiment_002_rrt_vs_baselines.md) — future RRT comparison protocol.
+- [`docs/theory_of_mind_late_stage.md`](docs/theory_of_mind_late_stage.md) — late-stage Theory of Mind / social cognition roadmap.
 - [`docs/decision_log.md`](docs/decision_log.md) — why major decisions were made.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable changes and research notes.
 
@@ -112,6 +113,8 @@ The most original long-term idea is **Swarm-RRT**:
 > Can a population of locally perceiving agents collectively approximate a search tree through movement, communication, and environmental memory?
 
 This connects the project to artificial life, swarm robotics, embodied cognition, distributed planning, and collective intelligence.
+
+A later research direction may study operational Theory of Mind-like mechanisms, such as other-agent state estimation and knowledge-state estimation, only after multi-agent baselines, communication metrics, and environmental or group memory are established. See [`docs/theory_of_mind_late_stage.md`](docs/theory_of_mind_late_stage.md).
 
 ---
 
