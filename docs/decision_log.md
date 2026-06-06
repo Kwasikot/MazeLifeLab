@@ -37,6 +37,58 @@ What could go wrong?
 
 ---
 
+## 2026-06-06 — Frame intelligence as dynamic stability for future stages
+
+### Context
+
+MazeLifeLab is inspired by artificial life, cybernetics, procedural environments, reinforcement learning, swarm intelligence, and distributed search. The project needs a careful long-term concept of intelligence that is useful for experiments but does not create premature claims about consciousness, human-like minds, or real Theory of Mind.
+
+### Decision
+
+Document a long-term operational framing of intelligence as dynamic stability: an agent becomes more capable when it can maintain viable internal and behavioural states through perception, prediction, action, memory, and adaptation.
+
+This framing is documentation only. It does not change the current active implementation focus, which remains `EXP-001 — Single-Agent Navigation Benchmark`.
+
+### Reasoning
+
+The dynamic-stability framing connects several future research directions in a disciplined way:
+
+- agent self-state can be treated as measurable internal or behavioural variables;
+- partial observability can be described as an agent-relative Umwelt;
+- intelligence can be measured through prediction-action loops rather than vague cognitive labels;
+- navigation can later be studied through viability maintenance, not only explicit reward;
+- randomness can be treated as an adaptive exploration primitive;
+- advanced agents can be built through tested lower-level capabilities rather than opaque monolithic cognitive classes.
+
+This supports the project's artificial-life direction while preserving scientific caution.
+
+### Alternatives Considered
+
+- Keep intelligence undefined until much later.
+- Treat intelligence primarily as reinforcement-learning reward maximisation.
+- Introduce broad biological or consciousness terminology immediately.
+- Document the framing now while explicitly preventing implementation scope creep.
+
+The selected option is to document the framing now as a future research note and keep all implementation gated by experiments, metrics, and baselines.
+
+### Risks / Limitations
+
+- The framing may sound more ambitious than the current codebase supports.
+- Terms such as viability, self-state, Umwelt, and dynamic stability require operational metrics before implementation.
+- Cursor or future agents may try to implement advanced features too early unless the staged roadmap is followed.
+- The project must avoid claiming consciousness, real self-awareness, or human-like understanding.
+
+### Related Files
+
+- `docs/intelligence_as_dynamic_stability.md`
+- `docs/theory_of_mind_late_stage.md`
+- `docs/research_agenda.md`
+- `docs/project_memory.md`
+- `.cursor/rules/project_memory_and_changelog.mdc`
+- `.cursor/rules/research_decision_gates.mdc`
+
+---
+
 ## 2026-06-06 — Postpone Theory of Mind to late-stage experiments
 
 ### Context
