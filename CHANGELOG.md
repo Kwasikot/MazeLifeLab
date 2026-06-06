@@ -22,11 +22,14 @@ This project follows a research-oriented changelog discipline: changes should be
   - `.cursor/rules/unity_experiment_debugging.mdc`
 - Added decision log for preserving why major research and engineering decisions were made:
   - `docs/decision_log.md`
+- Added late-stage Theory of Mind research documentation:
+  - `docs/theory_of_mind_late_stage.md`
 
 ### Changed
 
 - Reframed the project direction toward a reproducible artificial life and maze-navigation research platform.
 - Clarified that `EXP-001 — Single-Agent Navigation Benchmark` is the current active implementation focus before RRT, ML-Agents, multi-agent communication, or Swarm-RRT.
+- Clarified that Theory of Mind, self-state modelling, social cognition, and knowledge-state estimation are late-stage research directions, not implementation tasks for EXP-001 or EXP-002.
 
 ### Fixed
 
@@ -43,14 +46,15 @@ This project follows a research-oriented changelog discipline: changes should be
   - metrics logging;
   - CSV output;
   - reproducibility.
-- Metrics impacted: none yet; metrics are specified but not implemented.
-- Scientific reason: establish a reproducible baseline before adding RRT, ML-Agents, multi-agent communication, or artificial life mechanisms.
+- Metrics impacted: none yet; late-stage social-cognition metrics are documented but not implemented.
+- Scientific reason: establish a reproducible baseline before adding RRT, ML-Agents, multi-agent communication, environmental memory, social state estimation, or Theory of Mind-like mechanisms.
 - Risks / limitations:
   - current implementation may still be prototype-level;
   - deterministic behaviour may be affected by Unity physics;
   - metrics are not yet implemented;
   - baselines are not yet implemented;
-  - README still describes the broader long-term roadmap and should later be aligned with the staged experiment documents.
+  - README still describes the broader long-term roadmap and should later be aligned with the staged experiment documents;
+  - Theory of Mind terminology may cause scope creep unless kept as cautious late-stage documentation only.
 
 ---
 
