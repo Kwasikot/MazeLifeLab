@@ -25,7 +25,7 @@ Single-Agent Navigation Benchmark
 Status:
 
 ```text
-PLANNING
+IN PROGRESS — Days 2–3 complete (episode loop)
 ```
 
 Primary document:
@@ -51,6 +51,15 @@ The immediate objective is:
 - CSV output.
 
 ---
+
+# Implemented For EXP-001
+
+```text
+Deterministic maze seed (MazeSeedConfig, MazeGenerator)
+Maze fingerprint logging for reproducibility checks
+EXP-001 episode loop (start/goal, success/timeout, reset)
+ManualAgentController for episode testing (WASD)
+```
 
 # Current Baselines
 
@@ -158,14 +167,14 @@ Collective exploration under partial observability using simple local communicat
 Implement:
 
 ```text
-Deterministic maze seed support
+MetricsLogger (CSV) for EXP-001 episodes
 ```
 
 Acceptance criteria:
 
-- same seed => same maze
-- different seed => different maze
-- result can be verified visually and programmatically
+- CSV file is created with required columns;
+- each episode writes one row;
+- steps and termination_reason are recorded.
 
 ---
 

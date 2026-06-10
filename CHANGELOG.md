@@ -10,8 +10,17 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added deterministic maze seed support for EXP-001:
+  - `Assets/Scripts/Maze/MazeSeedConfig.cs`
+  - `Assets/Scripts/Maze/MazeGenerator.cs`
+- Refactored `Assets/Scripts/MazeGen.cs` to use seeded generation and log a reproducibility fingerprint.
+- Added EXP-001 episode loop (Days 2–3):
+  - `Assets/Scripts/Experiments/Experiment001Runner.cs`
+  - `Assets/Scripts/Experiments/EpisodeTerminationReason.cs`
+  - `Assets/Scripts/Agents/ManualAgentController.cs`
+  - `Assets/Scripts/Maze/MazeCellIndex.cs`
+- Added custom Inspector buttons for episode control (`Assets/Editor/Experiment001RunnerEditor.cs`).
 - Added initial research documentation structure:
-  - `docs/research_agenda.md`
   - `docs/experiment_001_single_agent.md`
   - `docs/project_memory.md`
   - `docs/schedule_exp_001.md`
@@ -36,29 +45,27 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Fixed
 
-- Nothing yet.
+- Removed invalid `Unity.VisualScripting` import from legacy maze generation code (compile error CS0234).
+- Replaced tank-style agent controls with top-down WASD movement and added a follow camera for EXP-001 manual testing.
+- Maze walls now render in Game view via `MazeWallVisualizer` mesh (replacing Scene-only `Debug.DrawLine`).
+- Fixed duplicated/scaled maze visuals by moving generation to `MazeSystem` (scale 1) and aligning the floor plane to 100x100 world units.
+- Expanded EXP-001 camera zoom (orthographic top-down, up to full maze view; press **F** to toggle full-maze framing).
 
 ### Research Notes
 
 - Active experiment: `EXP-001 — Single-Agent Navigation Benchmark`
-- Current status: planning / preparation
+- Current status: in progress — episode loop implemented (Days 2–3 milestone)
 - Current focus:
-  - deterministic maze generation;
-  - single-agent episode loop;
-  - baseline agents;
-  - metrics logging;
-  - CSV output;
-  - reproducibility.
-- Metrics impacted: none yet; late-stage social-cognition and dynamic-stability metrics are documented but not implemented.
-- Scientific reason: establish a reproducible baseline before adding RRT, ML-Agents, multi-agent communication, environmental memory, social state estimation, Theory of Mind-like mechanisms, viability-based navigation, or intelligence-as-dynamic-stability layers.
+  - metrics logger (CSV);
+  - RandomWalk baseline;
+  - WallFollower baseline;
+  - batch runner.
+- Metrics impacted: `maze_seed` will feed future CSV rows; no runtime metrics yet.
+- Scientific reason: deterministic seeds are required before baseline comparison across runs.
 - Risks / limitations:
-  - current implementation may still be prototype-level;
-  - deterministic behaviour may be affected by Unity physics;
-  - metrics are not yet implemented;
-  - baselines are not yet implemented;
-  - README still describes the broader long-term roadmap and should later be aligned with the staged experiment documents;
-  - Theory of Mind terminology may cause scope creep unless kept as cautious late-stage documentation only;
-  - intelligence-as-dynamic-stability terminology may cause scope creep unless kept operational, measurable, and explicitly future-stage.
+  - maze still rendered with `Debug.DrawLine` only (no 3D wall colliders yet);
+  - legacy neighbor-cell edge cases preserved from prototype;
+  - carving uses `System.Random`, isolated from `UnityEngine.Random` used elsewhere.
 
 ---
 
