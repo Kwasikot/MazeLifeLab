@@ -50,22 +50,32 @@ This project follows a research-oriented changelog discipline: changes should be
 - Maze walls now render in Game view via `MazeWallVisualizer` mesh (replacing Scene-only `Debug.DrawLine`).
 - Fixed duplicated/scaled maze visuals by moving generation to `MazeSystem` (scale 1) and aligning the floor plane to 100x100 world units.
 - Expanded EXP-001 camera zoom (orthographic top-down, up to full maze view; press **F** to toggle full-maze framing).
+- Added RandomWalk baseline for EXP-001 (Days 4–5):
+  - `Assets/Scripts/Agents/RandomWalkAgent.cs`
+  - `Assets/Scripts/Experiments/Experiment001Algorithm.cs`
+  - Algorithm selector on `Experiment001Runner` (`Manual` / `RandomWalk`)
+  - Geometric maze raycast sensing (no physics colliders on walls)
+  - Episode logs now include `collisions` and `pathLength`
+- Added WallFollower baseline for EXP-001 (Days 6–7):
+  - `Assets/Scripts/Agents/WallFollowerAgent.cs`
+  - `WallFollowerRight` and `WallFollowerLeft` algorithms on `Experiment001Runner`
+  - Grid-based passage sensing via `MazeGenerator.HasVisibleWallBetween`
+  - Fixed maze carving neighbor lookup for row-0/column-0 adjacency (`j > 0`, `i > 0`)
+  - Removed unstable `MeshCollider` wall sensing; orthographic camera snap to stop scene jitter
 
 ### Research Notes
 
 - Active experiment: `EXP-001 — Single-Agent Navigation Benchmark`
-- Current status: in progress — episode loop implemented (Days 2–3 milestone)
+- Current status: in progress — Days 6–7 complete (RandomWalk + WallFollower baselines)
 - Current focus:
-  - metrics logger (CSV);
-  - RandomWalk baseline;
-  - WallFollower baseline;
-  - batch runner.
-- Metrics impacted: `maze_seed` will feed future CSV rows; no runtime metrics yet.
-- Scientific reason: deterministic seeds are required before baseline comparison across runs.
+  - MetricsLogger (CSV) — Days 8–9;
+  - batch runner — Days 10–11;
+  - validation pass — Days 12–14.
+- Metrics impacted: episode logs include `steps`, `collisions`, `pathLength`; CSV export pending.
+- Scientific reason: deterministic seeds and comparable baselines before batch evaluation.
 - Risks / limitations:
-  - maze still rendered with `Debug.DrawLine` only (no 3D wall colliders yet);
-  - legacy neighbor-cell edge cases preserved from prototype;
-  - carving uses `System.Random`, isolated from `UnityEngine.Random` used elsewhere.
+  - wall-following may loop on non-simply-connected mazes (documented in EXP-001 spec);
+  - RandomWalk still uses geometric raycast sensing (WallFollower uses grid topology).
 
 ---
 

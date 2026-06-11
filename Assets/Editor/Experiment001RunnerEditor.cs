@@ -26,8 +26,11 @@ public class Experiment001RunnerEditor : Editor
         }
 
         EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Algorithm", runner.Algorithm.ToString());
         EditorGUILayout.LabelField("Running", runner.IsRunning.ToString());
         EditorGUILayout.LabelField("Steps", runner.Steps.ToString());
+        EditorGUILayout.LabelField("Collisions", runner.Collisions.ToString());
+        EditorGUILayout.LabelField("Path Length", runner.PathLength.ToString("F1"));
         EditorGUILayout.LabelField("Success", runner.Success.ToString());
         EditorGUILayout.LabelField("Termination", runner.TerminationReason.ToString());
     }

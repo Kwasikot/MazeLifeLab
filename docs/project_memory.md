@@ -25,7 +25,7 @@ Single-Agent Navigation Benchmark
 Status:
 
 ```text
-IN PROGRESS — Days 2–3 complete (episode loop)
+IN PROGRESS — Days 6–7 complete (WallFollower baseline)
 ```
 
 Primary document:
@@ -59,6 +59,8 @@ Deterministic maze seed (MazeSeedConfig, MazeGenerator)
 Maze fingerprint logging for reproducibility checks
 EXP-001 episode loop (start/goal, success/timeout, reset)
 ManualAgentController for episode testing (WASD)
+RandomWalkAgent baseline with collision and path-length tracking
+WallFollowerAgent (right-hand and left-hand rules)
 ```
 
 # Current Baselines
@@ -66,14 +68,15 @@ ManualAgentController for episode testing (WASD)
 Implemented:
 
 ```text
-None
+RandomWalkAgent
+WallFollowerAgent
+ManualAgentController (testing only)
 ```
 
 Planned:
 
 ```text
-RandomWalkAgent
-WallFollowerAgent
+(none for EXP-001 baselines)
 ```
 
 Future:
@@ -167,7 +170,7 @@ Collective exploration under partial observability using simple local communicat
 Implement:
 
 ```text
-MetricsLogger (CSV) for EXP-001 episodes
+MetricsLogger (CSV) for EXP-001 episodes (Days 8–9)
 ```
 
 Acceptance criteria:
