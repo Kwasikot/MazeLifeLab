@@ -4,6 +4,7 @@ using UnityEngine;
 public class Experiment001Runner : MonoBehaviour
 {
     [SerializeField] MazeGen mazeGen;
+    [SerializeField] Experiment001Algorithm algorithm = Experiment001Algorithm.RandomWalk;
     [SerializeField] MazeCellIndex startCell = new MazeCellIndex(0, 0);
     [SerializeField] MazeCellIndex goalCell = new MazeCellIndex(19, 19);
     [SerializeField] int maxSteps = 5000;
@@ -15,11 +16,19 @@ public class Experiment001Runner : MonoBehaviour
     [SerializeField] bool autoStartOnPlay = true;
 
     ManualAgentController _manualController;
+    RandomWalkAgent _randomWalkAgent;
+    WallFollowerAgent _wallFollowerAgent;
     Vector3 _goalWorldPosition;
+    Vector3 _lastAgentPosition;
     int _steps;
+    int _collisions;
+    float _pathLength;
     bool _isRunning;
 
+    public Experiment001Algorithm Algorithm => algorithm;
     public int Steps => _steps;
+    public int Collisions => _collisions;
+    public float PathLength => _pathLength;
     public bool IsRunning => _isRunning;
     public bool Success { get; private set; }
     public EpisodeTerminationReason TerminationReason { get; private set; } = EpisodeTerminationReason.None;
@@ -53,6 +62,9 @@ public class Experiment001Runner : MonoBehaviour
         if (!_isRunning || agent == null)
             return;
 
+        ExecuteAgentStep();
+        TrackMovementMetrics();
+
         _steps++;
 
         if (HorizontalDistance(agent.position, _goalWorldPosition) <= goalRadius)
@@ -63,6 +75,43 @@ public class Experiment001Runner : MonoBehaviour
 
         if (_steps >= maxSteps)
             EndEpisode(EpisodeTerminationReason.Timeout, success: false);
+    }
+
+    void ExecuteAgentStep()
+    {
+        switch (algorithm)
+        {
+            case Experiment001Algorithm.RandomWalk:
+                _randomWalkAgent.ExecuteStep();
+                break;
+            case Experiment001Algorithm.WallFollowerRight:
+            case Experiment001Algorithm.WallFollowerLeft:
+                _wallFollowerAgent.ExecuteStep();
+                break;
+        }
+    }
+
+    void TrackMovementMetrics()
+    {
+        Vector3 current = agent.position;
+        _pathLength += HorizontalDistance(_lastAgentPosition, current);
+        _lastAgentPosition = current;
+
+        if (algorithm == Experiment001Algorithm.RandomWalk && _randomWalkAgent != null)
+            _collisions = _randomWalkAgent.CollisionCount;
+        else if (IsWallFollowerAlgorithm() && _wallFollowerAgent != null)
+            _collisions = _wallFollowerAgent.CollisionCount;
+    }
+
+    bool IsWallFollowerAlgorithm()
+    {
+        return algorithm == Experiment001Algorithm.WallFollowerRight ||
+               algorithm == Experiment001Algorithm.WallFollowerLeft;
+    }
+
+    bool IsAutonomousAlgorithm()
+    {
+        return algorithm != Experiment001Algorithm.Manual;
     }
 
     void HandleMazeRegenerated()
@@ -100,17 +149,63 @@ public class Experiment001Runner : MonoBehaviour
         goalMarker.position = _goalWorldPosition;
 
         _steps = 0;
+        _collisions = 0;
+        _pathLength = 0f;
+        _lastAgentPosition = startPosition;
         _isRunning = true;
         Success = false;
         TerminationReason = EpisodeTerminationReason.None;
-        SetManualControlEnabled(true);
+
+        ConfigureActiveAlgorithm(generator.MazeSeed);
         EnsureCameraFollow(true);
 
+        if (IsWallFollowerAlgorithm())
+        {
+            Debug.Log(
+                $"[EXP-001] wall-follower passages at start {startCell}: " +
+                $"{generator.DescribeOpenPassages(startCell.x, startCell.y)} " +
+                $"(seed={generator.MazeSeed}, fingerprint={generator.Fingerprint})");
+        }
+
         Debug.Log(
-            $"[EXP-001] episode started seed={generator.MazeSeed} " +
+            $"[EXP-001] episode started algorithm={algorithm} seed={generator.MazeSeed} " +
             $"start={startCell} ({startPosition.x:F1},{startPosition.z:F1}) " +
             $"goal={resolvedGoal} ({_goalWorldPosition.x:F1},{_goalWorldPosition.z:F1}) " +
             $"maxSteps={maxSteps}. Press F to toggle camera: full maze / follow agent.");
+    }
+
+    void ConfigureActiveAlgorithm(int mazeSeed)
+    {
+        SetManualControlEnabled(false);
+        if (_randomWalkAgent != null)
+            _randomWalkAgent.EndEpisode();
+        if (_wallFollowerAgent != null)
+            _wallFollowerAgent.EndEpisode();
+
+        switch (algorithm)
+        {
+            case Experiment001Algorithm.Manual:
+                SetManualControlEnabled(true);
+                break;
+            case Experiment001Algorithm.RandomWalk:
+                if (_randomWalkAgent != null)
+                    _randomWalkAgent.BeginEpisode(mazeSeed, mazeGen.Generator);
+                break;
+            case Experiment001Algorithm.WallFollowerRight:
+                if (_wallFollowerAgent != null)
+                    _wallFollowerAgent.BeginEpisode(
+                        WallFollowerAgent.HandRule.Right,
+                        mazeGen.Generator,
+                        agentHeight);
+                break;
+            case Experiment001Algorithm.WallFollowerLeft:
+                if (_wallFollowerAgent != null)
+                    _wallFollowerAgent.BeginEpisode(
+                        WallFollowerAgent.HandRule.Left,
+                        mazeGen.Generator,
+                        agentHeight);
+                break;
+        }
     }
 
     [ContextMenu("Reset Episode")]
@@ -174,11 +269,7 @@ public class Experiment001Runner : MonoBehaviour
 
         if (agent != null)
         {
-            _manualController = agent.GetComponent<ManualAgentController>();
-            if (_manualController == null)
-                _manualController = agent.gameObject.AddComponent<ManualAgentController>();
-            RemoveColliderIfPresent(agent.gameObject);
-            DisableShadows(agent.gameObject);
+            EnsureAgentComponents(agent.gameObject);
             return;
         }
 
@@ -187,7 +278,7 @@ public class Experiment001Runner : MonoBehaviour
         agentObject.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
         RemoveColliderIfPresent(agentObject);
         agent = agentObject.transform;
-        _manualController = agentObject.AddComponent<ManualAgentController>();
+        EnsureAgentComponents(agentObject);
 
         var renderer = agentObject.GetComponent<Renderer>();
         if (renderer != null)
@@ -195,6 +286,24 @@ public class Experiment001Runner : MonoBehaviour
             renderer.material.color = Color.cyan;
             DisableShadows(agentObject);
         }
+    }
+
+    void EnsureAgentComponents(GameObject agentObject)
+    {
+        _manualController = agentObject.GetComponent<ManualAgentController>();
+        if (_manualController == null)
+            _manualController = agentObject.AddComponent<ManualAgentController>();
+
+        _randomWalkAgent = agentObject.GetComponent<RandomWalkAgent>();
+        if (_randomWalkAgent == null)
+            _randomWalkAgent = agentObject.AddComponent<RandomWalkAgent>();
+
+        _wallFollowerAgent = agentObject.GetComponent<WallFollowerAgent>();
+        if (_wallFollowerAgent == null)
+            _wallFollowerAgent = agentObject.AddComponent<WallFollowerAgent>();
+
+        RemoveColliderIfPresent(agentObject);
+        DisableShadows(agentObject);
     }
 
     void EnsureGoalMarkerExists()
@@ -264,7 +373,10 @@ public class Experiment001Runner : MonoBehaviour
             return false;
         }
 
-        return candidate.name == "Agent" || candidate.GetComponent<ManualAgentController>() != null;
+        return candidate.name == "Agent" ||
+               candidate.GetComponent<ManualAgentController>() != null ||
+               candidate.GetComponent<RandomWalkAgent>() != null ||
+               candidate.GetComponent<WallFollowerAgent>() != null;
     }
 
     static void RemoveColliderIfPresent(GameObject obj)
@@ -310,8 +422,14 @@ public class Experiment001Runner : MonoBehaviour
         TerminationReason = reason;
         SetManualControlEnabled(false);
 
+        if (_randomWalkAgent != null)
+            _randomWalkAgent.EndEpisode();
+        if (_wallFollowerAgent != null)
+            _wallFollowerAgent.EndEpisode();
+
         Debug.Log(
-            $"[EXP-001] episode ended success={success} steps={_steps} " +
+            $"[EXP-001] episode ended algorithm={algorithm} success={success} steps={_steps} " +
+            $"collisions={_collisions} pathLength={_pathLength:F1} " +
             $"reason={reason} seed={mazeGen.Generator.MazeSeed}");
     }
 

@@ -279,6 +279,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mazeGen: {fileID: 910000002}
+  algorithm: 2
   startCell:
     x: 0
     y: 0

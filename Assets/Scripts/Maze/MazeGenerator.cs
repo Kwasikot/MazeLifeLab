@@ -46,6 +46,141 @@ public class MazeGenerator
             cellY * _config.cellSize + half);
     }
 
+    public bool TryWorldToCell(Vector3 world, out int cellX, out int cellY)
+    {
+        cellX = Mathf.FloorToInt(world.x / _config.cellSize);
+        cellY = Mathf.FloorToInt(world.z / _config.cellSize);
+        return IsCellInBounds(cellX, cellY);
+    }
+
+    /// <summary>
+    /// True when a visible wall blocks passage from (cellX, cellY) in direction (dirX, dirZ).
+    /// dir is one of (0,1), (1,0), (0,-1), (-1,0) on the XZ grid.
+    /// </summary>
+    public bool HasVisibleWallBetween(int cellX, int cellY, int dirX, int dirZ)
+    {
+        if (!IsCellInBounds(cellX, cellY))
+            return true;
+
+        int neighborX = cellX + dirX;
+        int neighborY = cellY + dirZ;
+        if (!IsCellInBounds(neighborX, neighborY))
+            return true;
+
+        return IsSharedWallVisible(cellX, cellY, neighborX, neighborY);
+    }
+
+    bool IsSharedWallVisible(int cellX, int cellY, int neighborX, int neighborY)
+    {
+        MazeCell cell = _cells[cellX, cellY];
+        Vector3 from;
+        Vector3 to;
+
+        if (neighborX == cellX + 1 && neighborY == cellY)
+        {
+            from = cell.B;
+            to = cell.D;
+        }
+        else if (neighborX == cellX - 1 && neighborY == cellY)
+        {
+            from = cell.C;
+            to = cell.A;
+        }
+        else if (neighborY == cellY + 1 && neighborX == cellX)
+        {
+            from = cell.D;
+            to = cell.C;
+        }
+        else if (neighborY == cellY - 1 && neighborX == cellX)
+        {
+            from = cell.A;
+            to = cell.B;
+        }
+        else
+        {
+            return true;
+        }
+
+        string key = ValidKey(from, to);
+        if (key == "")
+            return true;
+
+        return _wallsMap[key].bVisible;
+    }
+
+    /// <summary>
+    /// 2D raycast against visible wall center lines on the XZ plane.
+    /// </summary>
+    public bool TryRaycastVisibleWall(
+        Vector3 origin,
+        Vector3 direction,
+        float maxDistance,
+        out float hitDistance)
+    {
+        hitDistance = maxDistance;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 1e-8f)
+            return false;
+
+        direction.Normalize();
+        Vector2 rayOrigin = new Vector2(origin.x, origin.z);
+        Vector2 rayDir = new Vector2(direction.x, direction.z);
+
+        float closest = maxDistance;
+        bool found = false;
+
+        foreach (KeyValuePair<string, MazeWall> entry in _wallsMap)
+        {
+            if (!entry.Value.bVisible)
+                continue;
+
+            if (RayIntersectsSegment2D(
+                    rayOrigin,
+                    rayDir,
+                    maxDistance,
+                    entry.Value.A,
+                    entry.Value.B,
+                    out float distance) &&
+                distance < closest)
+            {
+                closest = distance;
+                found = true;
+            }
+        }
+
+        hitDistance = closest;
+        return found;
+    }
+
+    static bool RayIntersectsSegment2D(
+        Vector2 rayOrigin,
+        Vector2 rayDir,
+        float maxDistance,
+        Vector3 segA,
+        Vector3 segB,
+        out float hitDistance)
+    {
+        hitDistance = maxDistance;
+        Vector2 a = new Vector2(segA.x, segA.z);
+        Vector2 b = new Vector2(segB.x, segB.z);
+        Vector2 seg = b - a;
+
+        float cross = rayDir.x * seg.y - rayDir.y * seg.x;
+        const float epsilon = 1e-6f;
+        if (Mathf.Abs(cross) < epsilon)
+            return false;
+
+        Vector2 diff = a - rayOrigin;
+        float t = (diff.x * seg.y - diff.y * seg.x) / cross;
+        float u = (diff.x * rayDir.y - diff.y * rayDir.x) / cross;
+
+        if (t < 0f || t > maxDistance || u < 0f || u > 1f)
+            return false;
+
+        hitDistance = t;
+        return true;
+    }
+
     public MazeGenerator(MazeSeedConfig config)
     {
         _config = config;
@@ -63,7 +198,36 @@ public class MazeGenerator
 
     static string WallKey(Vector3 a, Vector3 b)
     {
-        return $"{a.x}{a.z}{b.x}{b.z}";
+        int ax = Mathf.RoundToInt(a.x);
+        int az = Mathf.RoundToInt(a.z);
+        int bx = Mathf.RoundToInt(b.x);
+        int bz = Mathf.RoundToInt(b.z);
+        return $"{ax}{az}{bx}{bz}";
+    }
+
+    public bool IsPassageOpen(int cellX, int cellY, int dirX, int dirZ)
+    {
+        return !HasVisibleWallBetween(cellX, cellY, dirX, dirZ);
+    }
+
+    public int CountOpenPassages(int cellX, int cellY)
+    {
+        int count = 0;
+        if (IsPassageOpen(cellX, cellY, 0, 1)) count++;
+        if (IsPassageOpen(cellX, cellY, 1, 0)) count++;
+        if (IsPassageOpen(cellX, cellY, 0, -1)) count++;
+        if (IsPassageOpen(cellX, cellY, -1, 0)) count++;
+        return count;
+    }
+
+    public string DescribeOpenPassages(int cellX, int cellY)
+    {
+        var names = new System.Collections.Generic.List<string>();
+        if (IsPassageOpen(cellX, cellY, 0, 1)) names.Add("N");
+        if (IsPassageOpen(cellX, cellY, 1, 0)) names.Add("E");
+        if (IsPassageOpen(cellX, cellY, 0, -1)) names.Add("S");
+        if (IsPassageOpen(cellX, cellY, -1, 0)) names.Add("W");
+        return names.Count == 0 ? "none" : string.Join(",", names);
     }
 
     void CreateCells()
@@ -93,13 +257,13 @@ public class MazeGenerator
         _cells[i, j].walls = new List<string>();
 
         AddOrShareWall(currentId, i, j, a, b,
-            (currentId - _config.mazeWidthCells) > 0 ? currentId - _config.mazeWidthCells : currentId);
+            j > 0 ? currentId - _config.mazeWidthCells : currentId);
         AddOrShareWall(currentId, i, j, b, d,
             (i + 1) < _config.mazeWidthCells ? currentId + 1 : currentId);
         AddOrShareWall(currentId, i, j, d, c,
             (j + 1) < _config.mazeHeightCells ? currentId + _config.mazeWidthCells : currentId);
         AddOrShareWall(currentId, i, j, c, a,
-            (i - 1) > 0 ? currentId - 1 : currentId);
+            i > 0 ? currentId - 1 : currentId);
     }
 
     void AddOrShareWall(int currentId, int i, int j, Vector3 a, Vector3 b, int neighborId)

@@ -14,7 +14,15 @@ public class MazeWallVisualizer : MonoBehaviour
 
     void Awake()
     {
+        RemoveLegacyCollider();
         EnsureMeshComponents();
+    }
+
+    void RemoveLegacyCollider()
+    {
+        var collider = GetComponent<MeshCollider>();
+        if (collider != null)
+            Destroy(collider);
     }
 
     void EnsureMeshComponents()

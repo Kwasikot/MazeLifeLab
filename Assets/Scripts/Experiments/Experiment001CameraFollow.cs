@@ -121,6 +121,10 @@ public class Experiment001CameraFollow : MonoBehaviour
             transform.position = desiredPosition;
             _snapNextFrame = false;
         }
+        else if (useOrthographic)
+        {
+            transform.position = desiredPosition;
+        }
         else
         {
             transform.position = Vector3.Lerp(
