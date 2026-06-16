@@ -301,19 +301,19 @@ termination_reason
 
 ## Tasks
 
-- [ ] Create `MetricsLogger` or equivalent.
-- [ ] Track episode id.
-- [ ] Track algorithm name.
-- [ ] Track maze seed.
-- [ ] Track success.
-- [ ] Track steps.
-- [ ] Track collisions.
-- [ ] Track approximate path length.
-- [ ] Track approximate coverage percent.
-- [ ] Track termination reason.
-- [ ] Write CSV file.
-- [ ] Update `CHANGELOG.md`.
-- [ ] Update `docs/project_memory.md` if metrics are completed.
+- [x] Create `MetricsLogger` or equivalent.
+- [x] Track episode id.
+- [x] Track algorithm name.
+- [x] Track maze seed.
+- [x] Track success.
+- [x] Track steps.
+- [x] Track collisions.
+- [x] Track approximate path length.
+- [x] Track approximate coverage percent.
+- [x] Track termination reason.
+- [x] Write CSV file.
+- [x] Update `CHANGELOG.md`.
+- [x] Update `docs/project_memory.md` if metrics are completed.
 
 ## Cursor Prompt
 
@@ -343,9 +343,9 @@ Do not add ML-Agents or communication.
 
 ## Done When
 
-- [ ] CSV file is created.
-- [ ] Each episode writes one row.
-- [ ] Required columns exist.
+- [x] CSV file is created.
+- [x] Each episode writes one row.
+- [x] Required columns exist.
 - [ ] Values are plausible when checked visually.
 
 ---

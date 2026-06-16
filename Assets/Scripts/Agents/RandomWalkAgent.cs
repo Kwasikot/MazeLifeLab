@@ -32,9 +32,9 @@ public class RandomWalkAgent : MonoBehaviour
     public int CollisionCount { get; private set; }
     public Action LastAction { get; private set; } = Action.Wait;
 
-    public void BeginEpisode(int mazeSeed, MazeGenerator generator)
+    public void BeginEpisode(int mazeSeed, MazeGenerator generator, int agentIndex = 0)
     {
-        _rng = new System.Random(mazeSeed + 90401);
+        _rng = new System.Random(mazeSeed + 90401 + agentIndex * 7919);
         _generator = generator;
         CollisionCount = 0;
         _enabled = true;

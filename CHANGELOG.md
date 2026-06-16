@@ -10,6 +10,17 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added EXP-004 multi-agent exploration without communication:
+  - `Assets/Scripts/Experiments/Experiment004Runner.cs`
+  - `Assets/Scripts/Experiments/MultiAgentMetricsLogger.cs`
+  - `Assets/Scripts/Experiments/MultiAgentStartLayout.cs`
+  - `Assets/Editor/Experiment004RunnerEditor.cs`
+  - `docs/experiment_004_multi_agent.md`
+  - CSV output: `results/experiment_004_multi_agent.csv`
+- Added `MetricsLogger` CSV output for EXP-001 (Days 8–9):
+  - `Assets/Scripts/Experiments/MetricsLogger.cs`
+  - One row per episode in `results/experiment_001_single_agent.csv`
+  - Unified `coverage_percent` from unique visited cells in `Experiment001Runner`
 - Added deterministic maze seed support for EXP-001:
   - `Assets/Scripts/Maze/MazeSeedConfig.cs`
   - `Assets/Scripts/Maze/MazeGenerator.cs`

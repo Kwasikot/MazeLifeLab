@@ -49,9 +49,7 @@ public class Experiment001CameraFollow : MonoBehaviour
     {
         _viewFullMaze = true;
         orthographicSize = maxOrthographicSize;
-
-        if (_camera != null && useOrthographic)
-            _camera.orthographicSize = orthographicSize;
+        ApplyCameraProjection();
 
         if (snapImmediately)
             SnapToFocus();
@@ -63,9 +61,7 @@ public class Experiment001CameraFollow : MonoBehaviour
     {
         _viewFullMaze = false;
         orthographicSize = Mathf.Clamp(orthographicSize, minOrthographicSize, maxOrthographicSize * 0.45f);
-
-        if (_camera != null && useOrthographic)
-            _camera.orthographicSize = orthographicSize;
+        ApplyCameraProjection();
 
         if (snapImmediately)
             SnapToFocus();
@@ -76,8 +72,12 @@ public class Experiment001CameraFollow : MonoBehaviour
     void Awake()
     {
         _camera = GetComponent<Camera>();
-        if (_camera != null && useOrthographic)
-            _camera.orthographic = true;
+        ApplyCameraProjection();
+    }
+
+    void Start()
+    {
+        ApplyViewState();
     }
 
     void Update()
@@ -118,7 +118,7 @@ public class Experiment001CameraFollow : MonoBehaviour
 
         if (_snapNextFrame)
         {
-            transform.position = desiredPosition;
+            ApplyViewState();
             _snapNextFrame = false;
         }
         else if (useOrthographic)
@@ -146,7 +146,26 @@ public class Experiment001CameraFollow : MonoBehaviour
 
     void SnapToFocus()
     {
-        transform.position = GetFocusPoint() + Vector3.up * height;
+        ApplyViewState();
         _snapNextFrame = false;
+    }
+
+    void ApplyViewState()
+    {
+        transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        transform.position = GetFocusPoint() + Vector3.up * height;
+        ApplyCameraProjection();
+    }
+
+    void ApplyCameraProjection()
+    {
+        if (_camera == null)
+            _camera = GetComponent<Camera>();
+
+        if (_camera == null || !useOrthographic)
+            return;
+
+        _camera.orthographic = true;
+        _camera.orthographicSize = orthographicSize;
     }
 }

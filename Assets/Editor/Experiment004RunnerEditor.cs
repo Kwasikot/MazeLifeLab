@@ -2,8 +2,8 @@
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(Experiment001Runner))]
-public class Experiment001RunnerEditor : Editor
+[CustomEditor(typeof(Experiment004Runner))]
+public class Experiment004RunnerEditor : Editor
 {
     public override void OnInspectorGUI()
     {
@@ -11,7 +11,7 @@ public class Experiment001RunnerEditor : Editor
 
         EditorGUILayout.Space();
 
-        var runner = (Experiment001Runner)target;
+        var runner = (Experiment004Runner)target;
 
         if (GUILayout.Button("Begin Episode", GUILayout.Height(24)))
         {
@@ -29,12 +29,11 @@ public class Experiment001RunnerEditor : Editor
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Algorithm", runner.Algorithm.ToString());
+        EditorGUILayout.LabelField("Agents", runner.AgentCount.ToString());
         EditorGUILayout.LabelField("Running", runner.IsRunning.ToString());
         EditorGUILayout.LabelField("Steps", runner.Steps.ToString());
-        EditorGUILayout.LabelField("Collisions", runner.Collisions.ToString());
-        EditorGUILayout.LabelField("Path Length", runner.PathLength.ToString("F1"));
-        if (runner.Algorithm == Experiment001Algorithm.LocalRrt)
-            EditorGUILayout.LabelField("Coverage %", runner.CoveragePercent.ToString("F1"));
+        EditorGUILayout.LabelField("Team Coverage %", runner.TeamCoveragePercent.ToString("F1"));
+        EditorGUILayout.LabelField("Overlap %", runner.OverlapPercent.ToString("F1"));
         EditorGUILayout.LabelField("Success", runner.Success.ToString());
         EditorGUILayout.LabelField("Termination", runner.TerminationReason.ToString());
     }

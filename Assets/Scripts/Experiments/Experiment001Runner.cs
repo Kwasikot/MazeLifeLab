@@ -1,4 +1,5 @@
-using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Experiment001Runner : MonoBehaviour
@@ -14,6 +15,8 @@ public class Experiment001Runner : MonoBehaviour
     [SerializeField] Transform agent;
     [SerializeField] Transform goalMarker;
     [SerializeField] bool autoStartOnPlay = true;
+    [SerializeField] bool enableMetricsLogging = true;
+    [SerializeField] string metricsCsvRelativePath = "results/experiment_001_single_agent.csv";
 
     ManualAgentController _manualController;
     RandomWalkAgent _randomWalkAgent;
@@ -26,6 +29,10 @@ public class Experiment001Runner : MonoBehaviour
     float _pathLength;
     float _coveragePercent;
     bool _isRunning;
+    MetricsLogger _metricsLogger;
+    readonly HashSet<int> _visitedCellKeys = new HashSet<int>();
+    bool _ignoreMazeRegenerated;
+    Coroutine _cameraSetupCoroutine;
 
     public Experiment001Algorithm Algorithm => algorithm;
     public int Steps => _steps;
@@ -40,6 +47,8 @@ public class Experiment001Runner : MonoBehaviour
     {
         if (mazeGen == null)
             mazeGen = GetComponent<MazeGen>();
+
+        _metricsLogger = new MetricsLogger(metricsCsvRelativePath, enableMetricsLogging);
     }
 
     void OnEnable()
@@ -56,7 +65,7 @@ public class Experiment001Runner : MonoBehaviour
 
     void Start()
     {
-        if (autoStartOnPlay)
+        if (autoStartOnPlay && !_isRunning)
             BeginEpisode();
     }
 
@@ -102,16 +111,35 @@ public class Experiment001Runner : MonoBehaviour
         Vector3 current = agent.position;
         _pathLength += HorizontalDistance(_lastAgentPosition, current);
         _lastAgentPosition = current;
+        TrackVisitedCell();
 
         if (algorithm == Experiment001Algorithm.RandomWalk && _randomWalkAgent != null)
             _collisions = _randomWalkAgent.CollisionCount;
         else if (IsWallFollowerAlgorithm() && _wallFollowerAgent != null)
             _collisions = _wallFollowerAgent.CollisionCount;
         else if (algorithm == Experiment001Algorithm.LocalRrt && _localRrtAgent != null)
-        {
             _collisions = _localRrtAgent.CollisionCount;
-            _coveragePercent = _localRrtAgent.CoveragePercent;
-        }
+    }
+
+    void TrackVisitedCell()
+    {
+        if (agent == null || mazeGen == null || !mazeGen.HasGeneratedMaze)
+            return;
+
+        MazeGenerator generator = mazeGen.Generator;
+        if (!generator.TryWorldToCell(agent.position, out int cellX, out int cellY))
+            return;
+
+        _visitedCellKeys.Add(CellKey(cellX, cellY));
+        int totalCells = generator.Config.mazeWidthCells * generator.Config.mazeHeightCells;
+        _coveragePercent = totalCells > 0
+            ? 100f * _visitedCellKeys.Count / totalCells
+            : 0f;
+    }
+
+    static int CellKey(int cellX, int cellY)
+    {
+        return cellX * 1000 + cellY;
     }
 
     bool IsWallFollowerAlgorithm()
@@ -127,13 +155,35 @@ public class Experiment001Runner : MonoBehaviour
 
     void HandleMazeRegenerated()
     {
-        if (Application.isPlaying)
+        if (!Application.isPlaying || _ignoreMazeRegenerated || !isActiveAndEnabled)
+            return;
+
+        if (_restartAfterRegenCoroutine != null)
+            return;
+
+        _restartAfterRegenCoroutine = StartCoroutine(RestartEpisodeAfterMazeRegenerated());
+    }
+
+    Coroutine _restartAfterRegenCoroutine;
+
+    IEnumerator RestartEpisodeAfterMazeRegenerated()
+    {
+        yield return null;
+        _restartAfterRegenCoroutine = null;
+        if (isActiveAndEnabled)
             BeginEpisode();
     }
 
     [ContextMenu("Begin Episode")]
     public void BeginEpisode()
     {
+        if (!isActiveAndEnabled)
+        {
+            Debug.LogWarning(
+                "[EXP-001] Experiment001Runner is disabled — enabling it so FixedUpdate can drive the agent.");
+            enabled = true;
+        }
+
         if (!EnsureMazeReady())
             return;
 
@@ -163,13 +213,16 @@ public class Experiment001Runner : MonoBehaviour
         _collisions = 0;
         _pathLength = 0f;
         _coveragePercent = 0f;
+        _visitedCellKeys.Clear();
         _lastAgentPosition = startPosition;
+        TrackVisitedCell();
         _isRunning = true;
         Success = false;
         TerminationReason = EpisodeTerminationReason.None;
 
         ConfigureActiveAlgorithm(generator.MazeSeed);
         EnsureCameraFollow(true);
+        ScheduleCameraFollowRefresh(true);
 
         if (IsWallFollowerAlgorithm())
         {
@@ -249,7 +302,11 @@ public class Experiment001Runner : MonoBehaviour
         }
 
         if (!mazeGen.HasGeneratedMaze)
-            mazeGen.Regenerate();
+        {
+            _ignoreMazeRegenerated = true;
+            mazeGen.Regenerate(notifyListeners: false);
+            _ignoreMazeRegenerated = false;
+        }
 
         return mazeGen.HasGeneratedMaze;
     }
@@ -417,6 +474,21 @@ public class Experiment001Runner : MonoBehaviour
             Destroy(collider);
     }
 
+    void ScheduleCameraFollowRefresh(bool showFullMaze)
+    {
+        if (_cameraSetupCoroutine != null)
+            StopCoroutine(_cameraSetupCoroutine);
+
+        _cameraSetupCoroutine = StartCoroutine(RefreshCameraFollowNextFrame(showFullMaze));
+    }
+
+    IEnumerator RefreshCameraFollowNextFrame(bool showFullMaze)
+    {
+        yield return null;
+        EnsureCameraFollow(showFullMaze);
+        _cameraSetupCoroutine = null;
+    }
+
     void EnsureCameraFollow(bool showFullMaze)
     {
         if (agent == null)
@@ -468,6 +540,8 @@ public class Experiment001Runner : MonoBehaviour
         if (_localRrtAgent != null)
             _localRrtAgent.EndEpisode();
 
+        WriteEpisodeMetrics(reason, success);
+
         if (algorithm == Experiment001Algorithm.LocalRrt)
         {
             Debug.Log(
@@ -480,8 +554,26 @@ public class Experiment001Runner : MonoBehaviour
 
         Debug.Log(
             $"[EXP-001] episode ended algorithm={algorithm} success={success} steps={_steps} " +
-            $"collisions={_collisions} pathLength={_pathLength:F1} " +
+            $"collisions={_collisions} pathLength={_pathLength:F1} coverage={_coveragePercent:F1}% " +
             $"reason={reason} seed={mazeGen.Generator.MazeSeed}");
+    }
+
+    void WriteEpisodeMetrics(EpisodeTerminationReason reason, bool success)
+    {
+        if (_metricsLogger == null || !enableMetricsLogging || mazeGen == null || !mazeGen.HasGeneratedMaze)
+            return;
+
+        _metricsLogger.LogEpisode(new Experiment001EpisodeMetrics
+        {
+            mazeSeed = mazeGen.Generator.MazeSeed,
+            algorithm = algorithm.ToString(),
+            success = success,
+            steps = _steps,
+            collisions = _collisions,
+            pathLength = _pathLength,
+            coveragePercent = _coveragePercent,
+            terminationReason = reason
+        });
     }
 
     void SetManualControlEnabled(bool enabled)

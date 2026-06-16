@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[DefaultExecutionOrder(-100)]
 public class MazeGen : MonoBehaviour
 {
     [SerializeField] MazeSeedConfig config = new MazeSeedConfig();
@@ -24,21 +25,28 @@ public class MazeGen : MonoBehaviour
 
     void Start()
     {
-        Regenerate();
+        if (!HasGeneratedMaze)
+            Regenerate(notifyListeners: false);
     }
 
     [ContextMenu("Regenerate Maze")]
     public void Regenerate()
+    {
+        Regenerate(notifyListeners: true);
+    }
+
+    public void Regenerate(bool notifyListeners)
     {
         _generator = new MazeGenerator(config);
         _generator.Generate();
         RebuildWallVisuals();
 
         Debug.Log(
-            $"[MazeGen] EXP-001 seed={config.mazeSeed} " +
+            $"[MazeGen] seed={config.mazeSeed} " +
             $"fingerprint={_generator.Fingerprint} visibleWalls={_generator.VisibleWallCount}");
 
-        OnMazeRegenerated?.Invoke();
+        if (notifyListeners)
+            OnMazeRegenerated?.Invoke();
     }
 
     void EnsureWallVisualizerRoot()

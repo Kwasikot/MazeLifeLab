@@ -50,6 +50,10 @@ UserSettings/
 # Crash Reports
 sysinfo.txt
 
+# Experiment CSV output (generated locally)
+results/*.csv
+!results/.gitkeep
+
 # === OS Specific === #
 .DS_Store
 Thumbs.db

@@ -22,6 +22,8 @@ public class LocalRrtAgent : MonoBehaviour
     MazeGenerator _truth;
     System.Random _rng;
     bool _enabled;
+    int _agentIndex;
+    bool _drawTreeThisEpisode = true;
 
     int _cellX;
     int _cellY;
@@ -31,6 +33,10 @@ public class LocalRrtAgent : MonoBehaviour
     int _totalRrtIterations;
     int _totalRrtNodesCreated;
     int _collisionCount;
+    int _failedPathMoves;
+    int _stuckSteps;
+    int _lastStuckCellX = -1;
+    int _lastStuckCellY = -1;
 
     public bool Enabled
     {
@@ -45,15 +51,25 @@ public class LocalRrtAgent : MonoBehaviour
     public bool LastPlanFound { get; private set; }
     public string ObservabilityMode => "incremental_map";
 
+    public void ConfigureVisualization(Color treeColor, Color pathColor)
+    {
+        treeEdgeColor = treeColor;
+        pathEdgeColor = pathColor;
+    }
+
     public void BeginEpisode(
         int mazeSeed,
         MazeGenerator truth,
         int goalCellX,
         int goalCellY,
-        float height)
+        float height,
+        int agentIndex = 0,
+        bool drawRrtTree = true)
     {
         _truth = truth;
-        _rng = new System.Random(mazeSeed + 120301);
+        _agentIndex = agentIndex;
+        _drawTreeThisEpisode = drawRrtTree;
+        _rng = new System.Random(mazeSeed + 120301 + agentIndex * 7919);
         _goalCellX = goalCellX;
         _goalCellY = goalCellY;
         agentHeight = height;
@@ -61,8 +77,13 @@ public class LocalRrtAgent : MonoBehaviour
         _totalRrtIterations = 0;
         _totalRrtNodesCreated = 0;
         _stepsSinceReplan = replanIntervalSteps;
+        _failedPathMoves = 0;
+        _stuckSteps = 0;
+        _lastStuckCellX = -1;
+        _lastStuckCellY = -1;
         LastPlanFound = false;
         _enabled = true;
+        _visualizer = null;
 
         EnsureVisualizer();
 
@@ -79,7 +100,7 @@ public class LocalRrtAgent : MonoBehaviour
         SnapToGrid();
 
         Debug.Log(
-            $"[LocalRrt] start cell=({_cellX},{_cellY}) goal=({_goalCellX},{_goalCellY}) " +
+            $"[LocalRrt] agent={_agentIndex} start cell=({_cellX},{_cellY}) goal=({_goalCellX},{_goalCellY}) " +
             $"coverage={CoveragePercent:F1}% treeEdges={_treeEdges.Count} sensorRadius={sensorRadiusCells}");
     }
 
@@ -91,7 +112,11 @@ public class LocalRrtAgent : MonoBehaviour
         _pathQueue.Clear();
         _plannedPath.Clear();
         _treeEdges.Clear();
-        _visualizer?.Clear();
+        if (_visualizer != null)
+        {
+            _visualizer.Clear();
+            _visualizer = null;
+        }
     }
 
     public void ExecuteStep()
@@ -101,6 +126,7 @@ public class LocalRrtAgent : MonoBehaviour
 
         Sense();
         _stepsSinceReplan++;
+        TrackStuckState();
 
         if (_stepsSinceReplan >= replanIntervalSteps || _pathQueue.Count == 0)
             Replan();
@@ -111,6 +137,7 @@ public class LocalRrtAgent : MonoBehaviour
             if (next.x == _cellX && next.y == _cellY)
             {
                 _pathQueue.RemoveAt(0);
+                _failedPathMoves = 0;
                 if (_pathQueue.Count > 0)
                     next = _pathQueue[0];
                 else
@@ -118,11 +145,29 @@ public class LocalRrtAgent : MonoBehaviour
             }
 
             if (TryMoveToCell(next.x, next.y))
+            {
                 _pathQueue.RemoveAt(0);
+                _failedPathMoves = 0;
+            }
             else
+            {
                 _collisionCount++;
+                _failedPathMoves++;
+                if (_failedPathMoves >= 2)
+                {
+                    _pathQueue.Clear();
+                    _plannedPath.Clear();
+                    _failedPathMoves = 0;
+                    _stepsSinceReplan = replanIntervalSteps;
+                }
+            }
+
+            return;
         }
-        else if (_map.TryFindStepTowardFrontier(_cellX, _cellY, _goalCellX, _goalCellY, out int frontierDirX, out int frontierDirZ))
+
+        _failedPathMoves = 0;
+
+        if (_map.TryFindStepTowardFrontier(_cellX, _cellY, _goalCellX, _goalCellY, out int frontierDirX, out int frontierDirZ))
         {
             if (!TryMoveByDirection(frontierDirX, frontierDirZ))
                 _collisionCount++;
@@ -137,25 +182,77 @@ public class LocalRrtAgent : MonoBehaviour
             if (!TryMoveByDirection(dirX, dirZ))
                 _collisionCount++;
         }
+        else if (TryEscapeViaOpenPassage())
+        {
+        }
+    }
+
+    void TrackStuckState()
+    {
+        if (_cellX == _lastStuckCellX && _cellY == _lastStuckCellY)
+            _stuckSteps++;
+        else
+        {
+            _stuckSteps = 0;
+            _lastStuckCellX = _cellX;
+            _lastStuckCellY = _cellY;
+        }
+
+        if (_stuckSteps < 8)
+            return;
+
+        _stuckSteps = 0;
+        _pathQueue.Clear();
+        _plannedPath.Clear();
+        _failedPathMoves = 0;
+        _stepsSinceReplan = replanIntervalSteps;
+    }
+
+    bool TryEscapeViaOpenPassage()
+    {
+        int[][] directions =
+        {
+            new[] { 0, 1 },
+            new[] { 1, 0 },
+            new[] { 0, -1 },
+            new[] { -1, 0 }
+        };
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            int dirX = directions[i][0];
+            int dirZ = directions[i][1];
+            if (!_truth.IsPassageOpen(_cellX, _cellY, dirX, dirZ))
+                continue;
+
+            if (TryMoveByDirection(dirX, dirZ))
+                return true;
+        }
+
+        return false;
     }
 
     void EnsureVisualizer()
     {
-        if (_visualizer != null)
-            return;
-
         var legacyOnAgent = GetComponent<LocalRrtTreeVisualizer>();
         if (legacyOnAgent != null)
             Destroy(legacyOnAgent);
 
-        GameObject existing = GameObject.Find("MazeRrtVisual");
+        var legacyShared = GameObject.Find("MazeRrtVisual");
+        if (legacyShared != null)
+            Destroy(legacyShared);
+
+        string visualName = $"MazeRrtVisual_A{_agentIndex}";
+        GameObject existing = GameObject.Find(visualName);
         if (existing != null)
+        {
             _visualizer = existing.GetComponent<LocalRrtTreeVisualizer>();
-
-        if (_visualizer != null)
+            if (_visualizer == null)
+                _visualizer = existing.AddComponent<LocalRrtTreeVisualizer>();
             return;
+        }
 
-        var visualObject = new GameObject("MazeRrtVisual");
+        var visualObject = new GameObject(visualName);
         visualObject.transform.SetParent(null);
         visualObject.transform.position = Vector3.zero;
         visualObject.transform.rotation = Quaternion.identity;
@@ -210,12 +307,13 @@ public class LocalRrtAgent : MonoBehaviour
         if (_visualizer == null || _truth == null)
             return;
 
+        bool showTree = drawRrtTree && _drawTreeThisEpisode;
         _visualizer.Rebuild(
             _truth,
             _treeEdges,
             _plannedPath,
-            drawRrtTree,
-            drawPlannedPath,
+            showTree,
+            drawPlannedPath && _drawTreeThisEpisode,
             treeEdgeColor,
             pathEdgeColor);
     }

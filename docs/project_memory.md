@@ -13,44 +13,44 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-003
+EXP-004
 ```
 
 Name:
 
 ```text
-Local RRT Under Partial Observability
+Multi-Agent Exploration Without Communication
 ```
 
 Status:
 
 ```text
-IN PROGRESS — initial LocalRrtAgent integrated with episode loop
+IN PROGRESS — Experiment004Runner with 2+ independent agents, team CSV metrics
 ```
 
 Primary document:
 
 ```text
-docs/experiment_003_local_rrt.md
+docs/experiment_004_multi_agent.md
 ```
 
-Previous experiment (still used as shared infrastructure):
+Previous experiments (shared infrastructure):
 
 ```text
 EXP-001 — Single-Agent Navigation Benchmark
-docs/experiment_001_single_agent.md
+EXP-003 — Local RRT Under Partial Observability
 ```
 
 ---
 
 # Current Goal
 
-Implement incremental-map RRT navigation:
+Run multi-agent baseline without communication:
 
-- local sensing builds `MazeLocalDiscoveryMap`;
-- `LocalRrtPlanner` plans only through known-open passages;
-- agent explores frontiers when no plan exists;
-- metrics include coverage and RRT stats.
+- N agents share one maze and one goal;
+- each agent has independent sensing and planning;
+- team metrics: coverage, overlap, collisions, path length;
+- compare against single-agent EXP-001 on same seeds.
 
 ---
 
@@ -63,6 +63,8 @@ EXP-001 episode loop (start/goal, success/timeout, reset)
 ManualAgentController for episode testing (WASD)
 RandomWalkAgent baseline with collision and path-length tracking
 WallFollowerAgent (right-hand and left-hand rules)
+MetricsLogger CSV (single-agent episodes)
+Unique-cell coverage tracking in Experiment001Runner
 ```
 
 # Implemented For EXP-003
@@ -72,6 +74,16 @@ MazeLocalDiscoveryMap (incremental_map sensing)
 LocalRrtPlanner (grid RRT on discovered topology)
 LocalRrtAgent (sense → plan → act loop)
 Experiment001Algorithm.LocalRrt
+Per-agent RRT visualizer (MazeRrtVisual_A{n})
+```
+
+# Implemented For EXP-004
+
+```text
+Experiment004Runner (2–32 agents, no communication)
+MultiAgentStartLayout (corner/perimeter spawn)
+MultiAgentMetricsLogger (team coverage, overlap, CSV)
+Experiment004RunnerEditor
 ```
 
 # Current Baselines
@@ -89,7 +101,8 @@ Planned:
 
 ```text
 RRT_Global (EXP-002)
-MetricsLogger CSV (EXP-001 Days 8–9)
+Batch runner across seeds (EXP-001 Days 10–11)
+EXP-005 multi-agent with simple signals
 ```
 
 Future:
@@ -179,23 +192,23 @@ Collective exploration under partial observability using simple local communicat
 
 # Next Recommended Task
 
-Implement:
+Verify EXP-004 in Play mode, then:
 
 ```text
-WallFollowerAgent baseline (Days 6–7)
+Batch comparison: EXP-001 vs EXP-004 on same seeds (2, 4 agents)
 ```
 
-Or next:
+Or:
 
 ```text
-MetricsLogger (CSV) for EXP-001 episodes (Days 8–9)
+EXP-001 Days 10–11 — batch runner across seeds and algorithms
 ```
 
-Acceptance criteria:
+Acceptance criteria for EXP-004:
 
-- CSV file is created with required columns;
-- each episode writes one row;
-- steps and termination_reason are recorded.
+- Two or more agents move independently with no shared state;
+- CSV row per episode with team coverage and overlap;
+- visual inspection shows exploration overlap.
 
 ---
 
