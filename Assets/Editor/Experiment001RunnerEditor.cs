@@ -31,6 +31,8 @@ public class Experiment001RunnerEditor : Editor
         EditorGUILayout.LabelField("Steps", runner.Steps.ToString());
         EditorGUILayout.LabelField("Collisions", runner.Collisions.ToString());
         EditorGUILayout.LabelField("Path Length", runner.PathLength.ToString("F1"));
+        if (runner.Algorithm == Experiment001Algorithm.LocalRrt)
+            EditorGUILayout.LabelField("Coverage %", runner.CoveragePercent.ToString("F1"));
         EditorGUILayout.LabelField("Success", runner.Success.ToString());
         EditorGUILayout.LabelField("Termination", runner.TerminationReason.ToString());
     }

@@ -62,15 +62,20 @@ This project follows a research-oriented changelog discipline: changes should be
   - Grid-based passage sensing via `MazeGenerator.HasVisibleWallBetween`
   - Fixed maze carving neighbor lookup for row-0/column-0 adjacency (`j > 0`, `i > 0`)
   - Removed unstable `MeshCollider` wall sensing; orthographic camera snap to stop scene jitter
+- Started EXP-003 — Local RRT under partial observability:
+  - `docs/experiment_003_local_rrt.md`
+  - `MazeLocalDiscoveryMap`, `LocalRrtPlanner`, `LocalRrtAgent`
+  - `Experiment001Algorithm.LocalRrt` on episode runner
+  - Logs include `coverage`, `rrtNodes`, `rrtIterations`
 
 ### Research Notes
 
-- Active experiment: `EXP-001 — Single-Agent Navigation Benchmark`
-- Current status: in progress — Days 6–7 complete (RandomWalk + WallFollower baselines)
+- Active experiment: `EXP-003 — Local RRT Under Partial Observability`
+- Current status: in progress — initial agent integrated; Play-mode validation pending
 - Current focus:
-  - MetricsLogger (CSV) — Days 8–9;
-  - batch runner — Days 10–11;
-  - validation pass — Days 12–14.
+  - validate LocalRrt on seed 42;
+  - MetricsLogger (CSV) — EXP-001 Days 8–9;
+  - batch comparison vs WallFollower.
 - Metrics impacted: episode logs include `steps`, `collisions`, `pathLength`; CSV export pending.
 - Scientific reason: deterministic seeds and comparable baselines before batch evaluation.
 - Risks / limitations:

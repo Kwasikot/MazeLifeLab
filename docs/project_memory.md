@@ -13,24 +13,31 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-001
+EXP-003
 ```
 
 Name:
 
 ```text
-Single-Agent Navigation Benchmark
+Local RRT Under Partial Observability
 ```
 
 Status:
 
 ```text
-IN PROGRESS — Days 6–7 complete (WallFollower baseline)
+IN PROGRESS — initial LocalRrtAgent integrated with episode loop
 ```
 
 Primary document:
 
 ```text
+docs/experiment_003_local_rrt.md
+```
+
+Previous experiment (still used as shared infrastructure):
+
+```text
+EXP-001 — Single-Agent Navigation Benchmark
 docs/experiment_001_single_agent.md
 ```
 
@@ -38,21 +45,16 @@ docs/experiment_001_single_agent.md
 
 # Current Goal
 
-Create a reproducible benchmark environment for comparing simple navigation strategies.
+Implement incremental-map RRT navigation:
 
-The immediate objective is NOT machine learning.
-
-The immediate objective is:
-
-- deterministic maze generation;
-- reproducible episodes;
-- baseline agents;
-- metrics collection;
-- CSV output.
+- local sensing builds `MazeLocalDiscoveryMap`;
+- `LocalRrtPlanner` plans only through known-open passages;
+- agent explores frontiers when no plan exists;
+- metrics include coverage and RRT stats.
 
 ---
 
-# Implemented For EXP-001
+# Implemented For EXP-001 / Shared Infrastructure
 
 ```text
 Deterministic maze seed (MazeSeedConfig, MazeGenerator)
@@ -63,6 +65,15 @@ RandomWalkAgent baseline with collision and path-length tracking
 WallFollowerAgent (right-hand and left-hand rules)
 ```
 
+# Implemented For EXP-003
+
+```text
+MazeLocalDiscoveryMap (incremental_map sensing)
+LocalRrtPlanner (grid RRT on discovered topology)
+LocalRrtAgent (sense → plan → act loop)
+Experiment001Algorithm.LocalRrt
+```
+
 # Current Baselines
 
 Implemented:
@@ -70,19 +81,20 @@ Implemented:
 ```text
 RandomWalkAgent
 WallFollowerAgent
+LocalRrtAgent
 ManualAgentController (testing only)
 ```
 
 Planned:
 
 ```text
-(none for EXP-001 baselines)
+RRT_Global (EXP-002)
+MetricsLogger CSV (EXP-001 Days 8–9)
 ```
 
 Future:
 
 ```text
-RRT
 A*
 RL Agent
 ```
@@ -168,6 +180,12 @@ Collective exploration under partial observability using simple local communicat
 # Next Recommended Task
 
 Implement:
+
+```text
+WallFollowerAgent baseline (Days 6–7)
+```
+
+Or next:
 
 ```text
 MetricsLogger (CSV) for EXP-001 episodes (Days 8–9)

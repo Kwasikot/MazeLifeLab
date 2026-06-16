@@ -18,17 +18,20 @@ public class Experiment001Runner : MonoBehaviour
     ManualAgentController _manualController;
     RandomWalkAgent _randomWalkAgent;
     WallFollowerAgent _wallFollowerAgent;
+    LocalRrtAgent _localRrtAgent;
     Vector3 _goalWorldPosition;
     Vector3 _lastAgentPosition;
     int _steps;
     int _collisions;
     float _pathLength;
+    float _coveragePercent;
     bool _isRunning;
 
     public Experiment001Algorithm Algorithm => algorithm;
     public int Steps => _steps;
     public int Collisions => _collisions;
     public float PathLength => _pathLength;
+    public float CoveragePercent => _coveragePercent;
     public bool IsRunning => _isRunning;
     public bool Success { get; private set; }
     public EpisodeTerminationReason TerminationReason { get; private set; } = EpisodeTerminationReason.None;
@@ -88,6 +91,9 @@ public class Experiment001Runner : MonoBehaviour
             case Experiment001Algorithm.WallFollowerLeft:
                 _wallFollowerAgent.ExecuteStep();
                 break;
+            case Experiment001Algorithm.LocalRrt:
+                _localRrtAgent.ExecuteStep();
+                break;
         }
     }
 
@@ -101,6 +107,11 @@ public class Experiment001Runner : MonoBehaviour
             _collisions = _randomWalkAgent.CollisionCount;
         else if (IsWallFollowerAlgorithm() && _wallFollowerAgent != null)
             _collisions = _wallFollowerAgent.CollisionCount;
+        else if (algorithm == Experiment001Algorithm.LocalRrt && _localRrtAgent != null)
+        {
+            _collisions = _localRrtAgent.CollisionCount;
+            _coveragePercent = _localRrtAgent.CoveragePercent;
+        }
     }
 
     bool IsWallFollowerAlgorithm()
@@ -151,6 +162,7 @@ public class Experiment001Runner : MonoBehaviour
         _steps = 0;
         _collisions = 0;
         _pathLength = 0f;
+        _coveragePercent = 0f;
         _lastAgentPosition = startPosition;
         _isRunning = true;
         Success = false;
@@ -181,6 +193,8 @@ public class Experiment001Runner : MonoBehaviour
             _randomWalkAgent.EndEpisode();
         if (_wallFollowerAgent != null)
             _wallFollowerAgent.EndEpisode();
+        if (_localRrtAgent != null)
+            _localRrtAgent.EndEpisode();
 
         switch (algorithm)
         {
@@ -204,6 +218,18 @@ public class Experiment001Runner : MonoBehaviour
                         WallFollowerAgent.HandRule.Left,
                         mazeGen.Generator,
                         agentHeight);
+                break;
+            case Experiment001Algorithm.LocalRrt:
+                if (_localRrtAgent != null)
+                {
+                    MazeCellIndex resolvedGoal = ResolveGoalCell(mazeGen.Generator);
+                    _localRrtAgent.BeginEpisode(
+                        mazeSeed,
+                        mazeGen.Generator,
+                        resolvedGoal.x,
+                        resolvedGoal.y,
+                        agentHeight);
+                }
                 break;
         }
     }
@@ -302,6 +328,10 @@ public class Experiment001Runner : MonoBehaviour
         if (_wallFollowerAgent == null)
             _wallFollowerAgent = agentObject.AddComponent<WallFollowerAgent>();
 
+        _localRrtAgent = agentObject.GetComponent<LocalRrtAgent>();
+        if (_localRrtAgent == null)
+            _localRrtAgent = agentObject.AddComponent<LocalRrtAgent>();
+
         RemoveColliderIfPresent(agentObject);
         DisableShadows(agentObject);
     }
@@ -376,7 +406,8 @@ public class Experiment001Runner : MonoBehaviour
         return candidate.name == "Agent" ||
                candidate.GetComponent<ManualAgentController>() != null ||
                candidate.GetComponent<RandomWalkAgent>() != null ||
-               candidate.GetComponent<WallFollowerAgent>() != null;
+               candidate.GetComponent<WallFollowerAgent>() != null ||
+               candidate.GetComponent<LocalRrtAgent>() != null;
     }
 
     static void RemoveColliderIfPresent(GameObject obj)
@@ -422,10 +453,30 @@ public class Experiment001Runner : MonoBehaviour
         TerminationReason = reason;
         SetManualControlEnabled(false);
 
+        int rrtNodes = 0;
+        int rrtIterations = 0;
+        if (algorithm == Experiment001Algorithm.LocalRrt && _localRrtAgent != null)
+        {
+            rrtNodes = _localRrtAgent.RrtNodesCreated;
+            rrtIterations = _localRrtAgent.RrtIterations;
+        }
+
         if (_randomWalkAgent != null)
             _randomWalkAgent.EndEpisode();
         if (_wallFollowerAgent != null)
             _wallFollowerAgent.EndEpisode();
+        if (_localRrtAgent != null)
+            _localRrtAgent.EndEpisode();
+
+        if (algorithm == Experiment001Algorithm.LocalRrt)
+        {
+            Debug.Log(
+                $"[EXP-003] episode ended algorithm=LocalRrt success={success} steps={_steps} " +
+                $"collisions={_collisions} pathLength={_pathLength:F1} coverage={_coveragePercent:F1}% " +
+                $"rrtNodes={rrtNodes} rrtIterations={rrtIterations} " +
+                $"reason={reason} seed={mazeGen.Generator.MazeSeed}");
+            return;
+        }
 
         Debug.Log(
             $"[EXP-001] episode ended algorithm={algorithm} success={success} steps={_steps} " +
