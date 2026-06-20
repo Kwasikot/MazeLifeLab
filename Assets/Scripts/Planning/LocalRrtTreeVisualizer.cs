@@ -30,6 +30,7 @@ public class LocalRrtTreeVisualizer : MonoBehaviour
         _treeFilter = GetComponent<MeshFilter>();
         _treeRenderer = GetComponent<MeshRenderer>();
         _treeMesh = new Mesh { name = "LocalRrtTreeMesh" };
+        _treeMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         _treeFilter.sharedMesh = _treeMesh;
         _treeRenderer.sharedMaterial = CreateUnlitMaterial(new Color(0.2f, 1f, 0.35f, 0.95f));
         DisableShadows(_treeRenderer);
@@ -51,6 +52,7 @@ public class LocalRrtTreeVisualizer : MonoBehaviour
             _pathRenderer = _pathRoot.gameObject.AddComponent<MeshRenderer>();
 
         _pathMesh = new Mesh { name = "LocalRrtPathMesh" };
+        _pathMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         _pathFilter.sharedMesh = _pathMesh;
         _pathRenderer.sharedMaterial = CreateUnlitMaterial(new Color(0.2f, 0.85f, 1f, 1f));
         DisableShadows(_pathRenderer);

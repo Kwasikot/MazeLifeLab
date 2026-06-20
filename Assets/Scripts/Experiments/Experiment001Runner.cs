@@ -7,8 +7,8 @@ public class Experiment001Runner : MonoBehaviour
     [SerializeField] MazeGen mazeGen;
     [SerializeField] Experiment001Algorithm algorithm = Experiment001Algorithm.RandomWalk;
     [SerializeField] MazeCellIndex startCell = new MazeCellIndex(0, 0);
-    [SerializeField] MazeCellIndex goalCell = new MazeCellIndex(19, 19);
-    [SerializeField] int maxSteps = 5000;
+    [SerializeField] MazeCellIndex goalCell = new MazeCellIndex(-1, -1);
+    [SerializeField] int maxSteps = 0;
     [SerializeField] float goalRadius = 2f;
     [SerializeField] float goalVisualScale = 8f;
     [SerializeField] float agentHeight = 0.5f;
@@ -25,6 +25,7 @@ public class Experiment001Runner : MonoBehaviour
     Vector3 _goalWorldPosition;
     Vector3 _lastAgentPosition;
     int _steps;
+    int _episodeMaxSteps = 5000;
     int _collisions;
     float _pathLength;
     float _coveragePercent;
@@ -85,7 +86,7 @@ public class Experiment001Runner : MonoBehaviour
             return;
         }
 
-        if (_steps >= maxSteps)
+        if (_steps >= _episodeMaxSteps)
             EndEpisode(EpisodeTerminationReason.Timeout, success: false);
     }
 
@@ -189,6 +190,7 @@ public class Experiment001Runner : MonoBehaviour
 
         MazeGenerator generator = mazeGen.Generator;
         MazeCellIndex resolvedGoal = ResolveGoalCell(generator);
+        _episodeMaxSteps = MultiAgentStartLayout.ResolveMaxSteps(maxSteps, generator);
 
         if (!ValidateEpisodeSetup(generator, resolvedGoal))
             return;
@@ -236,7 +238,7 @@ public class Experiment001Runner : MonoBehaviour
             $"[EXP-001] episode started algorithm={algorithm} seed={generator.MazeSeed} " +
             $"start={startCell} ({startPosition.x:F1},{startPosition.z:F1}) " +
             $"goal={resolvedGoal} ({_goalWorldPosition.x:F1},{_goalWorldPosition.z:F1}) " +
-            $"maxSteps={maxSteps}. Press F to toggle camera: full maze / follow agent.");
+            $"maxSteps={_episodeMaxSteps}. Press F to toggle camera: full maze / follow agent.");
     }
 
     void ConfigureActiveAlgorithm(int mazeSeed)
@@ -313,12 +315,7 @@ public class Experiment001Runner : MonoBehaviour
 
     MazeCellIndex ResolveGoalCell(MazeGenerator generator)
     {
-        if (goalCell.x >= 0 && goalCell.y >= 0)
-            return goalCell;
-
-        int lastX = generator.Config.mazeWidthCells - 1;
-        int lastY = generator.Config.mazeHeightCells - 1;
-        return new MazeCellIndex(lastX, lastY);
+        return MultiAgentStartLayout.ResolveGoalCell(goalCell, generator);
     }
 
     bool ValidateEpisodeSetup(MazeGenerator generator, MazeCellIndex resolvedGoal)

@@ -22,8 +22,21 @@ public class MazeGenEditor : Editor
 
         if (mazeGen.HasGeneratedMaze)
         {
+            int totalCells = mazeGen.Config.mazeWidthCells * mazeGen.Config.mazeHeightCells;
+            EditorGUILayout.LabelField(
+                "Cells Carved",
+                $"{mazeGen.VisitedCellCount} / {totalCells} " +
+                $"({mazeGen.Config.mazeWidthCells}×{mazeGen.Config.mazeHeightCells})");
             EditorGUILayout.LabelField("Fingerprint", mazeGen.Fingerprint.ToString());
             EditorGUILayout.LabelField("Visible Walls", mazeGen.VisibleWallCount.ToString());
+
+            if (mazeGen.VisitedCellCount < totalCells)
+            {
+                EditorGUILayout.HelpBox(
+                    $"Only {mazeGen.VisitedCellCount} of {totalCells} cells were carved. " +
+                    "The maze will appear as a small patch on a large grid.",
+                    MessageType.Warning);
+            }
         }
     }
 }

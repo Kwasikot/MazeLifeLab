@@ -1,8 +1,49 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public static class MultiAgentStartLayout
 {
+    public const int LegacySmallMazeGoalCell = 19;
+
+    /// <summary>
+    /// Negative coordinates mean "far corner". Legacy (19,19) on mazes larger than 20×20
+    /// is remapped to the far corner so enlarged mazes still span start → opposite corner.
+    /// </summary>
+    public static MazeCellIndex ResolveGoalCell(MazeCellIndex configuredGoal, MazeGenerator generator)
+    {
+        int lastX = generator.Config.mazeWidthCells - 1;
+        int lastY = generator.Config.mazeHeightCells - 1;
+
+        if (configuredGoal.x < 0 || configuredGoal.y < 0)
+            return new MazeCellIndex(lastX, lastY);
+
+        if (configuredGoal.x == LegacySmallMazeGoalCell &&
+            configuredGoal.y == LegacySmallMazeGoalCell &&
+            (lastX > LegacySmallMazeGoalCell || lastY > LegacySmallMazeGoalCell))
+        {
+            return new MazeCellIndex(lastX, lastY);
+        }
+
+        if (generator.IsCellInBounds(configuredGoal.x, configuredGoal.y))
+            return configuredGoal;
+
+        return new MazeCellIndex(lastX, lastY);
+    }
+
+    /// <summary>
+    /// When configuredMaxSteps is 0 or negative, scale with maze area (2× cell count, min 5000).
+    /// </summary>
+    public static int ResolveMaxSteps(int configuredMaxSteps, MazeGenerator generator)
+    {
+        if (configuredMaxSteps > 0)
+            return configuredMaxSteps;
+
+        int w = generator.Config.mazeWidthCells;
+        int h = generator.Config.mazeHeightCells;
+        return Mathf.Max(5000, w * h * 2);
+    }
+
     public static List<MazeCellIndex> ResolveStartCells(
         int agentCount,
         int mazeWidth,
@@ -74,6 +115,68 @@ public static class MultiAgentStartLayout
 
             starts.Add(best);
         }
+
+        return starts;
+    }
+
+    /// <summary>
+    /// Clustered starts near the corner farthest from the goal so agents can overlap trails quickly.
+    /// </summary>
+    public static List<MazeCellIndex> ResolveNearbyCommunicationStarts(
+        int agentCount,
+        int mazeWidth,
+        int mazeHeight,
+        MazeCellIndex goalCell,
+        int spacingCells = 6)
+    {
+        var starts = new List<MazeCellIndex>();
+        if (agentCount <= 0 || mazeWidth <= 0 || mazeHeight <= 0)
+            return starts;
+
+        spacingCells = Mathf.Max(1, spacingCells);
+        List<MazeCellIndex> corners = CollectCorners(mazeWidth, mazeHeight, goalCell);
+        if (corners.Count == 0)
+            return starts;
+
+        corners.Sort((a, b) =>
+            ManhattanDistance(b, goalCell).CompareTo(ManhattanDistance(a, goalCell)));
+
+        MazeCellIndex anchor = corners[0];
+        int slotsPerRow = Mathf.Max(4, Mathf.CeilToInt(Mathf.Sqrt(agentCount)));
+
+        for (int i = 0; i < agentCount; i++)
+        {
+            int row = i / slotsPerRow;
+            int col = i % slotsPerRow;
+            int x = anchor.x + col * spacingCells;
+            int y = anchor.y + row * spacingCells;
+
+            if (x >= mazeWidth)
+                x = mazeWidth - 1;
+            if (y >= mazeHeight)
+                y = mazeHeight - 1;
+
+            var candidate = new MazeCellIndex(x, y);
+            if (IsSameCell(candidate, goalCell))
+                continue;
+
+            AddUnique(starts, candidate);
+        }
+
+        if (starts.Count < agentCount)
+        {
+            List<MazeCellIndex> fallback = ResolveStartCells(
+                agentCount,
+                mazeWidth,
+                mazeHeight,
+                goalCell);
+
+            for (int i = 0; i < fallback.Count && starts.Count < agentCount; i++)
+                AddUnique(starts, fallback[i]);
+        }
+
+        while (starts.Count > agentCount)
+            starts.RemoveAt(starts.Count - 1);
 
         return starts;
     }

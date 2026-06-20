@@ -13,30 +13,32 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-004
+EXP-006
 ```
 
 Name:
 
 ```text
-Multi-Agent Exploration Without Communication
+Swarm-RRT / Distributed Search Trees
 ```
 
 Status:
 
 ```text
-IN PROGRESS — Experiment004Runner with 2+ independent agents, team CSV metrics
+IN PROGRESS — SwarmRrtField, SwarmRrtPlanner, Experiment006Runner
 ```
 
 Primary document:
 
 ```text
-docs/experiment_004_multi_agent.md
+docs/experiment_006_swarm_rrt.md
 ```
 
 Previous experiments (shared infrastructure):
 
 ```text
+EXP-005 — Multi-Agent Exploration With Simple Signals
+EXP-004 — Multi-Agent Exploration Without Communication
 EXP-001 — Single-Agent Navigation Benchmark
 EXP-003 — Local RRT Under Partial Observability
 ```
@@ -45,12 +47,12 @@ EXP-003 — Local RRT Under Partial Observability
 
 # Current Goal
 
-Run multi-agent baseline without communication:
+Test whether agents can collectively approximate a distributed RRT by sharing tree edges through environmental memory:
 
-- N agents share one maze and one goal;
-- each agent has independent sensing and planning;
-- team metrics: coverage, overlap, collisions, path length;
-- compare against single-agent EXP-001 on same seeds.
+- `SwarmRrtField` stores deposited RRT branch edges per episode;
+- `SwarmRrt` mode grafts foreign tree nodes reachable in each agent's discovered map;
+- ablation: `Independent` (EXP-004) vs `DepositOnly` vs `SwarmRrt`;
+- team metrics plus `swarm_edges_deposited` and `swarm_graft_nodes`.
 
 ---
 
@@ -86,6 +88,29 @@ MultiAgentMetricsLogger (team coverage, overlap, CSV)
 Experiment004RunnerEditor
 ```
 
+# Implemented For EXP-005
+
+```text
+MazeStigmergyField (decaying per-cell environmental signals)
+AgentStigmergyController (Trail / FrontierHint / RandomNoise deposit modes)
+Experiment005Runner (extends multi-agent loop with communication ablation)
+Experiment005MetricsLogger (signals_deposited, signal_influenced_steps)
+Experiment005RunnerEditor
+LocalRrtAgent stigmergy read bias (optional, no shared discovery map)
+```
+
+# Implemented For EXP-006
+
+```text
+SwarmRrtField (shared RRT edge deposits per episode)
+SwarmRrtPlanner (graft foreign tree nodes into local RRT)
+Experiment006SwarmMode (Independent / DepositOnly / SwarmRrt ablation)
+Experiment006Runner (multi-agent loop with swarm overlay)
+Experiment006MetricsLogger (swarm_edges_deposited, swarm_graft_nodes)
+Experiment006RunnerEditor
+LocalRrtAgent.ConfigureSwarmRrt (optional deposit + graft)
+```
+
 # Current Baselines
 
 Implemented:
@@ -103,6 +128,7 @@ Planned:
 RRT_Global (EXP-002)
 Batch runner across seeds (EXP-001 Days 10–11)
 EXP-005 multi-agent with simple signals
+EXP-006 Swarm-RRT / distributed search trees (active)
 ```
 
 Future:
@@ -192,23 +218,7 @@ Collective exploration under partial observability using simple local communicat
 
 # Next Recommended Task
 
-Verify EXP-004 in Play mode, then:
-
-```text
-Batch comparison: EXP-001 vs EXP-004 on same seeds (2, 4 agents)
-```
-
-Or:
-
-```text
-EXP-001 Days 10–11 — batch runner across seeds and algorithms
-```
-
-Acceptance criteria for EXP-004:
-
-- Two or more agents move independently with no shared state;
-- CSV row per episode with team coverage and overlap;
-- visual inspection shows exploration overlap.
+Verify EXP-005 in Play mode (`communication_mode=Trail`), then compare CSV against EXP-004 on seed 42.
 
 ---
 

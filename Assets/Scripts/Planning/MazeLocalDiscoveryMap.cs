@@ -286,6 +286,11 @@ public class MazeLocalDiscoveryMap
         return false;
     }
 
+    public bool IsFrontierCell(int cellX, int cellY)
+    {
+        return HasUndiscoveredNeighbor(cellX, cellY);
+    }
+
     bool HasUndiscoveredNeighbor(int cellX, int cellY)
     {
         foreach (int[] dir in CardinalDirections)

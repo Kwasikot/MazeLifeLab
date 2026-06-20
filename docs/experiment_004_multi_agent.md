@@ -78,4 +78,4 @@ Scene: `Experiment004Runner` on `MazeSystem` (disable `Experiment001Runner` when
 
 ## 8. Next Step
 
-EXP-005 — Multi-Agent Exploration With Simple Signals.
+EXP-006 — Swarm-RRT / distributed search trees.

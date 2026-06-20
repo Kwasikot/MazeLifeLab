@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[DefaultExecutionOrder(100)]
-public class Experiment004Runner : MonoBehaviour
+[DefaultExecutionOrder(120)]
+public class Experiment006Runner : MonoBehaviour
 {
     static readonly Color[] AgentColors =
     {
@@ -29,6 +29,7 @@ public class Experiment004Runner : MonoBehaviour
         new Color(0.95f, 0.95f, 0.95f)
     };
 
+    [SerializeField] Experiment006SwarmMode swarmMode = Experiment006SwarmMode.SwarmRrt;
     [SerializeField] MazeGen mazeGen;
     [SerializeField] Experiment001Algorithm algorithm = Experiment001Algorithm.LocalRrt;
     [SerializeField] int agentCount = 2;
@@ -41,8 +42,9 @@ public class Experiment004Runner : MonoBehaviour
     [SerializeField] bool autoStartOnPlay = true;
     [SerializeField] bool disableSingleAgentRunner = true;
     [SerializeField] bool enableMetricsLogging = true;
-    [SerializeField] string metricsCsvRelativePath = "results/experiment_004_multi_agent.csv";
+    [SerializeField] string metricsCsvRelativePath = "results/experiment_006_swarm_rrt.csv";
     [SerializeField] bool drawLocalRrtTreeForFirstAgentOnly = false;
+    [SerializeField] bool followAgentOnStart = true;
 
     readonly List<AgentRuntime> _agents = new List<AgentRuntime>();
     readonly HashSet<int> _teamVisitedCells = new HashSet<int>();
@@ -60,12 +62,15 @@ public class Experiment004Runner : MonoBehaviour
     float _overlapPercent;
     bool _isRunning;
     bool _anyAgentReachedGoal;
-    MultiAgentMetricsLogger _metricsLogger;
+    Experiment006MetricsLogger _metricsLogger;
+    SwarmRrtField _swarmField;
+    int _swarmGraftNodes;
     Transform _agentsRoot;
     bool _ignoreMazeRegenerated;
     bool _beginEpisodeInProgress;
     Coroutine _cameraSetupCoroutine;
 
+    public Experiment006SwarmMode SwarmMode => swarmMode;
     public Experiment001Algorithm Algorithm => algorithm;
     public int ConfiguredAgentCount => agentCount;
     public int AgentCount => _agents.Count;
@@ -91,18 +96,50 @@ public class Experiment004Runner : MonoBehaviour
         if (mazeGen == null)
             mazeGen = GetComponent<MazeGen>();
 
-        _metricsLogger = new MultiAgentMetricsLogger(metricsCsvRelativePath, enableMetricsLogging);
+        _metricsLogger = new Experiment006MetricsLogger(metricsCsvRelativePath, enableMetricsLogging);
+        _swarmField = new SwarmRrtField();
+        ExperimentRunnerExclusivity.ActivateExclusive(this);
+    }
+
+    void DisableOtherRunners()
+    {
         ExperimentRunnerExclusivity.ActivateExclusive(this);
     }
 
     void DisableSingleAgentRunner()
     {
-        ExperimentRunnerExclusivity.ActivateExclusive(this);
+        DisableOtherRunners();
     }
 
     void OnValidate()
     {
         agentCount = Mathf.Max(2, agentCount);
+    }
+
+    void LogPerformanceHints(MazeGenerator generator)
+    {
+        if (algorithm != Experiment001Algorithm.LocalRrt)
+            return;
+
+        if (agentCount > 4 && !drawLocalRrtTreeForFirstAgentOnly)
+        {
+            Debug.LogWarning(
+                "[EXP-006] With many agents, enable Draw Local Rrt Tree For First Agent Only to reduce CPU load.");
+        }
+
+        if (agentCount >= 8 && generator != null)
+        {
+            var tuning = ExperimentMultiAgentPerformance.ResolveLocalRrtTuning(
+                0,
+                agentCount,
+                generator.Config.mazeWidthCells,
+                generator.Config.mazeHeightCells,
+                drawLocalRrtTreeForFirstAgentOnly || agentCount > 4);
+            Debug.Log(
+                $"[EXP-006] perf tuning for {agentCount} agents on {generator.Config.mazeWidthCells}x" +
+                $"{generator.Config.mazeHeightCells}: rrtIterations={tuning.RrtIterationsPerStep} " +
+                $"replanInterval={tuning.ReplanIntervalSteps} drawFirstOnly={drawLocalRrtTreeForFirstAgentOnly || agentCount > 4}.");
+        }
     }
 
     void OnEnable()
@@ -218,7 +255,7 @@ public class Experiment004Runner : MonoBehaviour
         if (!isActiveAndEnabled)
         {
             Debug.LogWarning(
-                "[EXP-004] Experiment004Runner is disabled — enabling it so FixedUpdate can drive agents.");
+                "[EXP-006] Experiment006Runner is disabled — enabling it so FixedUpdate can drive agents.");
             enabled = true;
         }
 
@@ -237,7 +274,7 @@ public class Experiment004Runner : MonoBehaviour
         if (startCells.Count < agentCount)
         {
             Debug.LogError(
-                $"[EXP-004] Could not resolve {agentCount} distinct start cells away from goal {resolvedGoal}.");
+                $"[EXP-006] Could not resolve {agentCount} distinct start cells away from goal {resolvedGoal}.");
             EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
             return;
         }
@@ -266,17 +303,22 @@ public class Experiment004Runner : MonoBehaviour
         _isRunning = true;
         Success = false;
         _anyAgentReachedGoal = false;
+        _swarmGraftNodes = 0;
         TerminationReason = EpisodeTerminationReason.None;
 
+        _swarmField = new SwarmRrtField();
+        _swarmField.Reset();
+
         ConfigureActiveAlgorithms(generator, resolvedGoal);
-        EnsureCameraFollow(true);
-        ScheduleCameraFollowRefresh(true);
+        EnsureCameraFollow(!followAgentOnStart);
+        ScheduleCameraFollowRefresh(!followAgentOnStart);
         TrackTeamMetrics();
+        LogPerformanceHints(generator);
 
         Debug.Log(
-            $"[EXP-004] episode started algorithm={algorithm} agents={_agents.Count} seed={generator.MazeSeed} " +
-            $"starts={FormatStartCells(startCells)} goal={resolvedGoal} maxSteps={_episodeMaxSteps}. " +
-            "No communication between agents.");
+            $"[EXP-006] episode started algorithm={algorithm} swarm={swarmMode} agents={_agents.Count} " +
+            $"seed={generator.MazeSeed} starts={FormatStartCells(startCells)} goal={resolvedGoal} maxSteps={_episodeMaxSteps}. " +
+            (followAgentOnStart ? "Camera following Agent_0 (press F for full maze)." : "Full maze view (press F to follow Agent_0)."));
         LogSpawnedAgents(startCells);
     }
 
@@ -309,7 +351,7 @@ public class Experiment004Runner : MonoBehaviour
                     if (runtime.LocalRrt != null)
                         runtime.LocalRrt.ExecuteStep();
                     else
-                        Debug.LogError($"[EXP-004] Agent_{i} is missing LocalRrtAgent.");
+                        Debug.LogError($"[EXP-006] Agent_{i} is missing LocalRrtAgent.");
                     break;
             }
         }
@@ -323,6 +365,7 @@ public class Experiment004Runner : MonoBehaviour
         MazeGenerator generator = mazeGen.Generator;
         _totalCollisions = 0;
         _totalPathLength = 0f;
+        _swarmGraftNodes = 0;
 
         for (int i = 0; i < _agents.Count; i++)
         {
@@ -339,7 +382,10 @@ public class Experiment004Runner : MonoBehaviour
             else if (IsWallFollowerAlgorithm() && runtime.WallFollower != null)
                 _totalCollisions += runtime.WallFollower.CollisionCount;
             else if (algorithm == Experiment001Algorithm.LocalRrt && runtime.LocalRrt != null)
+            {
                 _totalCollisions += runtime.LocalRrt.CollisionCount;
+                _swarmGraftNodes += runtime.LocalRrt.SwarmGraftNodes;
+            }
 
             if (!generator.TryWorldToCell(current, out int cellX, out int cellY))
                 continue;
@@ -386,6 +432,9 @@ public class Experiment004Runner : MonoBehaviour
     void ConfigureActiveAlgorithms(MazeGenerator generator, MazeCellIndex resolvedGoal)
     {
         int mazeSeed = generator.MazeSeed;
+        bool drawFirstOnly = drawLocalRrtTreeForFirstAgentOnly || agentCount > 4;
+        int mazeWidth = generator.Config.mazeWidthCells;
+        int mazeHeight = generator.Config.mazeHeightCells;
 
         for (int i = 0; i < _agents.Count; i++)
         {
@@ -412,10 +461,19 @@ public class Experiment004Runner : MonoBehaviour
                         agentHeight);
                     break;
                 case Experiment001Algorithm.LocalRrt:
-                    bool drawTree = !drawLocalRrtTreeForFirstAgentOnly || i == 0;
+                    var tuning = ExperimentMultiAgentPerformance.ResolveLocalRrtTuning(
+                        i,
+                        _agents.Count,
+                        mazeWidth,
+                        mazeHeight,
+                        drawFirstOnly);
                     Color treeColor = AgentTreeColors[i % AgentTreeColors.Length];
                     Color pathColor = new Color(treeColor.r * 0.85f, treeColor.g * 0.85f, treeColor.b * 0.85f, 1f);
+                    runtime.LocalRrt.ConfigurePerformance(
+                        tuning.RrtIterationsPerStep,
+                        tuning.ReplanIntervalSteps);
                     runtime.LocalRrt.ConfigureVisualization(treeColor, pathColor);
+                    runtime.LocalRrt.ConfigureDrawing(tuning.DrawTree, tuning.DrawPath);
                     runtime.LocalRrt.BeginEpisode(
                         mazeSeed,
                         generator,
@@ -423,7 +481,10 @@ public class Experiment004Runner : MonoBehaviour
                         resolvedGoal.y,
                         agentHeight,
                         i,
-                        drawTree);
+                        tuning.DrawTree || tuning.DrawPath);
+                    runtime.LocalRrt.ConfigureSwarmRrt(
+                        swarmMode.DepositsTreeEdges() ? _swarmField : null,
+                        swarmMode);
                     break;
             }
         }
@@ -456,7 +517,8 @@ public class Experiment004Runner : MonoBehaviour
         DestroyExistingAgents();
         EnsureAgentsRoot();
 
-        float scale = agentCount <= 2 ? 1.5f : agentCount <= 4 ? 1.2f : 1f;
+        float scale = ExperimentAgentVisuals.ResolveAgentCubeScale(generator, agentCount);
+        float height = ExperimentAgentVisuals.ResolveAgentHeight(generator, agentHeight);
 
         for (int i = 0; i < startCells.Count; i++)
         {
@@ -472,12 +534,12 @@ public class Experiment004Runner : MonoBehaviour
             DisableShadows(agentObject);
 
             runtime.Transform.localScale = new Vector3(scale, scale * 0.66f, scale);
-            var renderer = runtime.Transform.GetComponent<Renderer>();
-            if (renderer != null)
-                renderer.material.color = AgentColors[i % AgentColors.Length];
+            ExperimentAgentVisuals.ApplyUnlitColor(
+                runtime.Transform.GetComponent<Renderer>(),
+                AgentColors[i % AgentColors.Length]);
 
             Vector3 start = generator.GetCellCenterWorld(startCells[i].x, startCells[i].y);
-            start.y = agentHeight;
+            start.y = height;
             runtime.Transform.position = start;
             runtime.Transform.rotation = Quaternion.identity;
             runtime.LastPosition = start;
@@ -495,7 +557,7 @@ public class Experiment004Runner : MonoBehaviour
                 continue;
 
             Debug.Log(
-                $"[EXP-004] Agent_{i} startCell={startCells[i]} world=({t.position.x:F1},{t.position.z:F1})");
+                $"[EXP-006] Agent_{i} startCell={startCells[i]} world=({t.position.x:F1},{t.position.z:F1})");
         }
     }
 
@@ -572,13 +634,15 @@ public class Experiment004Runner : MonoBehaviour
 
         WriteEpisodeMetrics(reason, success);
 
+        int edgesDeposited = _swarmField != null ? _swarmField.TotalEdgeDeposits : 0;
+
         Debug.LogWarning(
-            $"[EXP-004] episode ended reason={reason} success={success} steps={_steps} agents={_agents.Count}");
+            $"[EXP-006] episode ended reason={reason} success={success} steps={_steps} agents={_agents.Count}");
         Debug.Log(
-            $"[EXP-004] episode ended algorithm={algorithm} agents={_agents.Count} success={success} " +
-            $"steps={_steps} stepsToFirstGoal={_stepsToFirstGoal} agentsAtGoal={_agentsAtGoal} " +
-            $"collisions={_totalCollisions} pathLength={_totalPathLength:F1} " +
-            $"teamCoverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
+            $"[EXP-006] episode ended algorithm={algorithm} swarm={swarmMode} agents={_agents.Count} " +
+            $"success={success} steps={_steps} stepsToFirstGoal={_stepsToFirstGoal} agentsAtGoal={_agentsAtGoal} " +
+            $"collisions={_totalCollisions} pathLength={_totalPathLength:F1} swarmEdges={edgesDeposited} " +
+            $"swarmGraft={_swarmGraftNodes} teamCoverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
             $"reason={reason} seed={mazeGen.Generator.MazeSeed}");
     }
 
@@ -587,10 +651,11 @@ public class Experiment004Runner : MonoBehaviour
         if (_metricsLogger == null || !enableMetricsLogging || mazeGen == null || !mazeGen.HasGeneratedMaze)
             return;
 
-        _metricsLogger.LogEpisode(new Experiment004EpisodeMetrics
+        _metricsLogger.LogEpisode(new Experiment006EpisodeMetrics
         {
             mazeSeed = mazeGen.Generator.MazeSeed,
             algorithm = algorithm.ToString(),
+            swarmMode = swarmMode.ToString(),
             agentCount = _agents.Count,
             success = success,
             steps = _steps,
@@ -600,6 +665,8 @@ public class Experiment004Runner : MonoBehaviour
             totalPathLength = _totalPathLength,
             teamCoveragePercent = _teamCoveragePercent,
             overlapPercent = _overlapPercent,
+            swarmEdgesDeposited = _swarmField != null ? _swarmField.TotalEdgeDeposits : 0,
+            swarmGraftNodes = _swarmGraftNodes,
             terminationReason = reason
         });
     }
@@ -608,7 +675,7 @@ public class Experiment004Runner : MonoBehaviour
     {
         if (mazeGen == null)
         {
-            Debug.LogError("[EXP-004] MazeGen reference is missing.");
+            Debug.LogError("[EXP-006] MazeGen reference is missing.");
             return false;
         }
 
@@ -634,14 +701,14 @@ public class Experiment004Runner : MonoBehaviour
     {
         if (agentCount < 2)
         {
-            Debug.LogError("[EXP-004] agentCount must be at least 2.");
+            Debug.LogError("[EXP-006] agentCount must be at least 2.");
             EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
             return false;
         }
 
         if (!generator.IsCellInBounds(resolvedGoal.x, resolvedGoal.y))
         {
-            Debug.LogError($"[EXP-004] Invalid goal cell: {resolvedGoal}");
+            Debug.LogError($"[EXP-006] Invalid goal cell: {resolvedGoal}");
             EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
             return false;
         }
@@ -652,14 +719,14 @@ public class Experiment004Runner : MonoBehaviour
             MazeCellIndex start = startCells[i];
             if (!generator.IsCellInBounds(start.x, start.y))
             {
-                Debug.LogError($"[EXP-004] Invalid start cell for agent {i}: {start}");
+                Debug.LogError($"[EXP-006] Invalid start cell for agent {i}: {start}");
                 EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
                 return false;
             }
 
             if (start.x == resolvedGoal.x && start.y == resolvedGoal.y)
             {
-                Debug.LogError($"[EXP-004] Agent {i} start overlaps goal: {start}");
+                Debug.LogError($"[EXP-006] Agent {i} start overlaps goal: {start}");
                 EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
                 return false;
             }
@@ -667,7 +734,7 @@ public class Experiment004Runner : MonoBehaviour
             int key = CellKey(start.x, start.y);
             if (!uniqueStarts.Add(key))
             {
-                Debug.LogError($"[EXP-004] Duplicate start cell for agent {i}: {start}");
+                Debug.LogError($"[EXP-006] Duplicate start cell for agent {i}: {start}");
                 EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
                 return false;
             }
@@ -685,7 +752,9 @@ public class Experiment004Runner : MonoBehaviour
             goalMarker = goalObject.transform;
         }
 
-        float scale = goalVisualScale > 0f ? goalVisualScale : 8f;
+        float scale = ExperimentAgentVisuals.ResolveGoalScale(
+            mazeGen != null && mazeGen.HasGeneratedMaze ? mazeGen.Generator : null,
+            goalVisualScale);
         goalMarker.localScale = new Vector3(scale * 0.75f, scale * 0.5f, scale * 0.75f);
         RemoveColliderIfPresent(goalMarker.gameObject);
 
@@ -718,7 +787,7 @@ public class Experiment004Runner : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null)
         {
-            Debug.LogWarning("[EXP-004] Main Camera not found; top-down view was not configured.");
+            Debug.LogWarning("[EXP-006] Main Camera not found; top-down view was not configured.");
             return;
         }
 
@@ -726,7 +795,6 @@ public class Experiment004Runner : MonoBehaviour
         if (follow == null)
             follow = cam.gameObject.AddComponent<Experiment001CameraFollow>();
 
-        follow.Height = 80f;
         follow.ConfigureForMaze(
             mazeGen.Config.mazeWidthCells,
             mazeGen.Config.mazeHeightCells,

@@ -10,6 +10,27 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added EXP-006 Swarm-RRT / distributed search trees:
+  - `Assets/Scripts/Planning/SwarmRrtField.cs`
+  - `Assets/Scripts/Planning/SwarmRrtPlanner.cs`
+  - `Assets/Scripts/Planning/Experiment006SwarmMode.cs`
+  - `Assets/Scripts/Experiments/Experiment006Runner.cs`
+  - `Assets/Scripts/Experiments/Experiment006MetricsLogger.cs`
+  - `Assets/Editor/Experiment006RunnerEditor.cs`
+  - `docs/experiment_006_swarm_rrt.md`
+  - CSV output: `results/experiment_006_swarm_rrt.csv`
+  - Swarm modes: `Independent`, `DepositOnly`, `SwarmRrt`
+  - `LocalRrtAgent.ConfigureSwarmRrt` (optional edge deposit + foreign-node graft)
+- Added EXP-005 multi-agent exploration with environmental stigmergy signals:
+  - `Assets/Scripts/Communication/MazeStigmergyField.cs`
+  - `Assets/Scripts/Communication/AgentStigmergyController.cs`
+  - `Assets/Scripts/Communication/Experiment005CommunicationMode.cs`
+  - `Assets/Scripts/Experiments/Experiment005Runner.cs`
+  - `Assets/Scripts/Experiments/Experiment005MetricsLogger.cs`
+  - `Assets/Editor/Experiment005RunnerEditor.cs`
+  - `docs/experiment_005_multi_agent_signals.md`
+  - CSV output: `results/experiment_005_multi_agent_signals.csv`
+  - Communication modes: `None`, `RandomNoise`, `Trail`, `FrontierHint`
 - Added EXP-004 multi-agent exploration without communication:
   - `Assets/Scripts/Experiments/Experiment004Runner.cs`
   - `Assets/Scripts/Experiments/MultiAgentMetricsLogger.cs`

@@ -38,6 +38,39 @@ public class LocalRrtAgent : MonoBehaviour
     int _lastStuckCellX = -1;
     int _lastStuckCellY = -1;
 
+    MazeStigmergyField _stigmergyField;
+    AgentStigmergyController _stigmergy;
+    bool _stigmergyReadEnabled;
+    bool _stigmergyIgnoreOwnSignals;
+    int _signalInfluencedSteps;
+
+    SwarmRrtField _swarmField;
+    Experiment006SwarmMode _swarmMode = Experiment006SwarmMode.Independent;
+    int _swarmGraftNodes;
+
+    public int SignalInfluencedSteps => _signalInfluencedSteps;
+    public int SwarmGraftNodes => _swarmGraftNodes;
+
+    public void ConfigureStigmergy(
+        MazeStigmergyField field,
+        AgentStigmergyController controller,
+        bool enableReadBias,
+        bool ignoreOwnSignals)
+    {
+        _stigmergyField = field;
+        _stigmergy = controller;
+        _stigmergyReadEnabled = enableReadBias && field != null;
+        _stigmergyIgnoreOwnSignals = ignoreOwnSignals;
+        _signalInfluencedSteps = 0;
+    }
+
+    public void ConfigureSwarmRrt(SwarmRrtField field, Experiment006SwarmMode mode)
+    {
+        _swarmField = field;
+        _swarmMode = mode;
+        _swarmGraftNodes = 0;
+    }
+
     public bool Enabled
     {
         get => _enabled;
@@ -50,6 +83,19 @@ public class LocalRrtAgent : MonoBehaviour
     public int RrtNodesCreated => _totalRrtNodesCreated;
     public bool LastPlanFound { get; private set; }
     public string ObservabilityMode => "incremental_map";
+
+    public void ConfigurePerformance(int iterationsPerStep, int replanInterval)
+    {
+        rrtIterationsPerStep = Mathf.Max(16, iterationsPerStep);
+        replanIntervalSteps = Mathf.Max(1, replanInterval);
+    }
+
+    public void ConfigureDrawing(bool drawTree, bool drawPath)
+    {
+        drawRrtTree = drawTree;
+        drawPlannedPath = drawPath;
+        _drawTreeThisEpisode = drawTree || drawPath;
+    }
 
     public void ConfigureVisualization(Color treeColor, Color pathColor)
     {
@@ -85,7 +131,8 @@ public class LocalRrtAgent : MonoBehaviour
         _enabled = true;
         _visualizer = null;
 
-        EnsureVisualizer();
+        if (_drawTreeThisEpisode)
+            EnsureVisualizer();
 
         _map.Reset(truth.Config.mazeWidthCells, truth.Config.mazeHeightCells);
 
@@ -109,6 +156,12 @@ public class LocalRrtAgent : MonoBehaviour
         _enabled = false;
         _truth = null;
         _rng = null;
+        _stigmergyField = null;
+        _stigmergy = null;
+        _stigmergyReadEnabled = false;
+        _swarmField = null;
+        _swarmMode = Experiment006SwarmMode.Independent;
+        _swarmGraftNodes = 0;
         _pathQueue.Clear();
         _plannedPath.Clear();
         _treeEdges.Clear();
@@ -148,6 +201,7 @@ public class LocalRrtAgent : MonoBehaviour
             {
                 _pathQueue.RemoveAt(0);
                 _failedPathMoves = 0;
+                NotifyStigmergyDeposit();
             }
             else
             {
@@ -169,22 +223,76 @@ public class LocalRrtAgent : MonoBehaviour
 
         if (_map.TryFindStepTowardFrontier(_cellX, _cellY, _goalCellX, _goalCellY, out int frontierDirX, out int frontierDirZ))
         {
-            if (!TryMoveByDirection(frontierDirX, frontierDirZ))
-                _collisionCount++;
+            if (TryMoveByDirection(frontierDirX, frontierDirZ))
+            {
+                NotifyStigmergyDeposit();
+                return;
+            }
+
+            _collisionCount++;
         }
         else if (_map.TryFindGreedyGoalStep(_cellX, _cellY, _goalCellX, _goalCellY, out int goalDirX, out int goalDirZ))
         {
-            if (!TryMoveByDirection(goalDirX, goalDirZ))
-                _collisionCount++;
+            if (TryMoveByDirection(goalDirX, goalDirZ))
+            {
+                NotifyStigmergyDeposit();
+                return;
+            }
+
+            _collisionCount++;
+        }
+        else if (TryMoveViaStigmergyBias())
+        {
+            return;
         }
         else if (_map.TryFindFrontierMove(_cellX, _cellY, _rng, out int dirX, out int dirZ))
         {
-            if (!TryMoveByDirection(dirX, dirZ))
-                _collisionCount++;
+            if (TryMoveByDirection(dirX, dirZ))
+            {
+                NotifyStigmergyDeposit();
+                return;
+            }
+
+            _collisionCount++;
         }
         else if (TryEscapeViaOpenPassage())
         {
+            NotifyStigmergyDeposit();
+            return;
         }
+
+        NotifyStigmergyDeposit();
+    }
+
+    bool TryMoveViaStigmergyBias()
+    {
+        if (!_stigmergyReadEnabled || _stigmergyField == null)
+            return false;
+
+        if (!_stigmergyField.TryFindBiasStep(
+                _cellX,
+                _cellY,
+                _agentIndex,
+                _stigmergyIgnoreOwnSignals,
+                _truth,
+                out int dirX,
+                out int dirZ))
+            return false;
+
+        if (!TryMoveByDirection(dirX, dirZ))
+            return false;
+
+        _signalInfluencedSteps++;
+        NotifyStigmergyDeposit();
+        return true;
+    }
+
+    void NotifyStigmergyDeposit()
+    {
+        if (_stigmergy == null)
+            return;
+
+        _stigmergy.NotifyAtCell(_cellX, _cellY, _map.IsFrontierCell(_cellX, _cellY));
     }
 
     void TrackStuckState()
@@ -273,22 +381,53 @@ public class LocalRrtAgent : MonoBehaviour
 
         _totalRrtIterations += rrtIterationsPerStep;
 
-        LastPlanFound = LocalRrtPlanner.TryFindPath(
-            _map,
-            _cellX,
-            _cellY,
-            _goalCellX,
-            _goalCellY,
-            rrtIterationsPerStep,
-            rrtGoalBias,
-            _rng,
-            out List<Vector2Int> path,
-            out List<LocalRrtEdge> treeEdges,
-            out int nodesCreated);
+        List<Vector2Int> path;
+        List<LocalRrtEdge> treeEdges;
+        int nodesCreated;
+        int graftCount = 0;
+
+        if (_swarmMode.UsesSwarmGraft() && _swarmField != null)
+        {
+            LastPlanFound = SwarmRrtPlanner.TryFindPath(
+                _map,
+                _cellX,
+                _cellY,
+                _goalCellX,
+                _goalCellY,
+                rrtIterationsPerStep,
+                rrtGoalBias,
+                _rng,
+                _swarmField,
+                _agentIndex,
+                out path,
+                out treeEdges,
+                out nodesCreated,
+                out graftCount);
+        }
+        else
+        {
+            LastPlanFound = LocalRrtPlanner.TryFindPath(
+                _map,
+                _cellX,
+                _cellY,
+                _goalCellX,
+                _goalCellY,
+                rrtIterationsPerStep,
+                rrtGoalBias,
+                _rng,
+                out path,
+                out treeEdges,
+                out nodesCreated);
+        }
+
+        _swarmGraftNodes += graftCount;
 
         _treeEdges.Clear();
         if (treeEdges != null)
             _treeEdges.AddRange(treeEdges);
+
+        if (_swarmMode.DepositsTreeEdges() && _swarmField != null && _treeEdges.Count > 0)
+            _swarmField.DepositTreeEdges(_agentIndex, _treeEdges);
 
         _totalRrtNodesCreated = Mathf.Max(_totalRrtNodesCreated, nodesCreated);
 
@@ -308,12 +447,19 @@ public class LocalRrtAgent : MonoBehaviour
             return;
 
         bool showTree = drawRrtTree && _drawTreeThisEpisode;
+        bool showPath = drawPlannedPath && _drawTreeThisEpisode;
+        if (!showTree && !showPath)
+        {
+            _visualizer.Clear();
+            return;
+        }
+
         _visualizer.Rebuild(
             _truth,
             _treeEdges,
             _plannedPath,
             showTree,
-            drawPlannedPath && _drawTreeThisEpisode,
+            showPath,
             treeEdgeColor,
             pathEdgeColor);
     }

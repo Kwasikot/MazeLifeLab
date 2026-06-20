@@ -1,10 +1,13 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 [DefaultExecutionOrder(-100)]
 public class MazeGen : MonoBehaviour
 {
     [SerializeField] MazeSeedConfig config = new MazeSeedConfig();
+    [SerializeField] bool autoConfigureCamera = true;
+    [SerializeField] bool autoAlignFloorPlane = true;
 
     MazeGenerator _generator;
     MazeWallVisualizer _wallVisualizer;
@@ -16,17 +19,18 @@ public class MazeGen : MonoBehaviour
     public MazeGenerator Generator => _generator;
     public int Fingerprint => _generator != null ? _generator.Fingerprint : 0;
     public int VisibleWallCount => _generator != null ? _generator.VisibleWallCount : 0;
+    public int VisitedCellCount => _generator != null ? _generator.VisitedCellCount : 0;
     public bool HasGeneratedMaze => _generator != null;
 
     void Awake()
     {
+        ExperimentRunnerExclusivity.EnforceExclusiveRunners(gameObject);
         EnsureWallVisualizerRoot();
     }
 
     void Start()
     {
-        if (!HasGeneratedMaze)
-            Regenerate(notifyListeners: false);
+        Regenerate(notifyListeners: false);
     }
 
     [ContextMenu("Regenerate Maze")]
@@ -39,11 +43,18 @@ public class MazeGen : MonoBehaviour
     {
         _generator = new MazeGenerator(config);
         _generator.Generate();
-        RebuildWallVisuals();
 
+        int totalCells = config.mazeWidthCells * config.mazeHeightCells;
         Debug.Log(
-            $"[MazeGen] seed={config.mazeSeed} " +
-            $"fingerprint={_generator.Fingerprint} visibleWalls={_generator.VisibleWallCount}");
+            $"[MazeGen] carved {_generator.VisitedCellCount}/{totalCells} cells " +
+            $"({config.mazeWidthCells}x{config.mazeHeightCells}, seed={config.mazeSeed}, " +
+            $"visibleWalls={_generator.VisibleWallCount})");
+
+        RebuildWallVisuals();
+        AlignFloorPlane();
+        AlignDirectionalLight();
+        if (autoConfigureCamera)
+            StartCoroutine(ConfigureCameraWhenReady());
 
         if (notifyListeners)
             OnMazeRegenerated?.Invoke();
@@ -78,19 +89,50 @@ public class MazeGen : MonoBehaviour
         EnsureWallVisualizerRoot();
 
         if (_wallVisualizer != null && _generator != null)
-            _wallVisualizer.Rebuild(_generator.WallsMap);
+            _wallVisualizer.Rebuild(_generator.WallsMap, config.cellSize);
     }
 
-    void OnDrawGizmos()
+    void AlignFloorPlane()
     {
-        if (_generator == null)
+        if (!autoAlignFloorPlane)
             return;
 
-        Gizmos.color = Color.red;
-        foreach (var kv in _generator.WallsMap)
+        GameObject plane = GameObject.Find("Plane");
+        if (plane == null)
+            return;
+
+        float mazeWidth = config.mazeWidthCells * config.cellSize;
+        float mazeHeight = config.mazeHeightCells * config.cellSize;
+        float scale = Mathf.Max(mazeWidth, mazeHeight) / 10f;
+
+        plane.transform.position = new Vector3(mazeWidth * 0.5f, 0f, mazeHeight * 0.5f);
+        plane.transform.localScale = new Vector3(scale, 1f, scale);
+    }
+
+    IEnumerator ConfigureCameraWhenReady()
+    {
+        Experiment001CameraFollow.TryConfigureMainCamera(this, showFullMaze: true);
+        yield return null;
+        Experiment001CameraFollow.TryConfigureMainCamera(this, showFullMaze: true);
+    }
+
+    void AlignDirectionalLight()
+    {
+        Light sun = RenderSettings.sun;
+        if (sun == null)
         {
-            if (kv.Value.bVisible)
-                Gizmos.DrawLine(kv.Value.A, kv.Value.B);
+            GameObject lightObject = GameObject.Find("Directional Light");
+            if (lightObject != null)
+                sun = lightObject.GetComponent<Light>();
         }
+
+        if (sun == null)
+            return;
+
+        float mazeWidth = config.mazeWidthCells * config.cellSize;
+        float mazeHeight = config.mazeHeightCells * config.cellSize;
+        float halfExtent = Mathf.Max(mazeWidth, mazeHeight) * 0.5f;
+
+        sun.transform.position = new Vector3(mazeWidth * 0.5f, halfExtent * 0.5f, mazeHeight * 0.5f);
     }
 }

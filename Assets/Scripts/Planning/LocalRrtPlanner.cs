@@ -38,6 +38,35 @@ public static class LocalRrtPlanner
         out List<LocalRrtEdge> treeEdges,
         out int nodesCreated)
     {
+        return TryFindPath(
+            map,
+            startX,
+            startY,
+            goalX,
+            goalY,
+            maxIterations,
+            goalBias,
+            rng,
+            null,
+            out path,
+            out treeEdges,
+            out nodesCreated);
+    }
+
+    public static bool TryFindPath(
+        MazeLocalDiscoveryMap map,
+        int startX,
+        int startY,
+        int goalX,
+        int goalY,
+        int maxIterations,
+        float goalBias,
+        System.Random rng,
+        IReadOnlyList<SwarmRrtGraftSeed> graftSeeds,
+        out List<Vector2Int> path,
+        out List<LocalRrtEdge> treeEdges,
+        out int nodesCreated)
+    {
         path = null;
         treeEdges = new List<LocalRrtEdge>();
         nodesCreated = 0;
@@ -52,6 +81,8 @@ public static class LocalRrtPlanner
         {
             new Node { X = startX, Y = startY, Parent = -1 }
         };
+
+        AppendGraftSeeds(map, startX, startY, graftSeeds, nodes);
 
         for (int iteration = 0; iteration < maxIterations; iteration++)
         {
@@ -104,6 +135,10 @@ public static class LocalRrtPlanner
                 continue;
 
             Node parent = nodes[node.Parent];
+            int manhattan = Mathf.Abs(node.X - parent.X) + Mathf.Abs(node.Y - parent.Y);
+            if (manhattan <= 0 || manhattan > 12)
+                continue;
+
             edges.Add(new LocalRrtEdge(
                 new Vector2Int(parent.X, parent.Y),
                 new Vector2Int(node.X, node.Y)));
@@ -191,5 +226,85 @@ public static class LocalRrtPlanner
 
         reversed.Reverse();
         return reversed;
+    }
+
+    static void AppendGraftSeeds(
+        MazeLocalDiscoveryMap map,
+        int startX,
+        int startY,
+        IReadOnlyList<SwarmRrtGraftSeed> graftSeeds,
+        List<Node> nodes)
+    {
+        if (graftSeeds == null || graftSeeds.Count == 0)
+            return;
+
+        var seen = new HashSet<long> { CellKey(startX, startY) };
+        var pending = new List<SwarmRrtGraftSeed>(graftSeeds);
+        int maxPasses = pending.Count + 1;
+
+        while (pending.Count > 0 && maxPasses-- > 0)
+        {
+            for (int i = pending.Count - 1; i >= 0; i--)
+            {
+                SwarmRrtGraftSeed seed = pending[i];
+                if (seed.X == startX && seed.Y == startY)
+                {
+                    pending.RemoveAt(i);
+                    continue;
+                }
+
+                if (!map.IsCellDiscovered(seed.X, seed.Y))
+                    continue;
+
+                long key = CellKey(seed.X, seed.Y);
+                if (seen.Contains(key))
+                {
+                    pending.RemoveAt(i);
+                    continue;
+                }
+
+                int parentIndex = FindNodeIndex(nodes, seed.ParentX, seed.ParentY);
+                if (parentIndex < 0)
+                    continue;
+
+                if (!IsTraversableStep(map, seed.ParentX, seed.ParentY, seed.X, seed.Y))
+                    continue;
+
+                seen.Add(key);
+                nodes.Add(new Node
+                {
+                    X = seed.X,
+                    Y = seed.Y,
+                    Parent = parentIndex
+                });
+                pending.RemoveAt(i);
+            }
+        }
+    }
+
+    static bool IsTraversableStep(MazeLocalDiscoveryMap map, int fromX, int fromY, int toX, int toY)
+    {
+        int dx = toX - fromX;
+        int dy = toY - fromY;
+        if (Mathf.Abs(dx) + Mathf.Abs(dy) != 1)
+            return false;
+
+        return map.IsPassageTraversable(fromX, fromY, dx, dy);
+    }
+
+    static int FindNodeIndex(List<Node> nodes, int cellX, int cellY)
+    {
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            if (nodes[i].X == cellX && nodes[i].Y == cellY)
+                return i;
+        }
+
+        return -1;
+    }
+
+    static long CellKey(int cellX, int cellY)
+    {
+        return ((long)cellX << 32) | (uint)cellY;
     }
 }

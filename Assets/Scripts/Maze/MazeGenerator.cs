@@ -21,6 +21,9 @@ public struct MazeCell
 
 public class MazeGenerator
 {
+    static readonly int[] CarveDx = { 1, -1, 0, 0 };
+    static readonly int[] CarveDy = { 0, 0, 1, -1 };
+
     readonly MazeSeedConfig _config;
     readonly Dictionary<string, MazeWall> _wallsMap = new Dictionary<string, MazeWall>();
     MazeCell[,] _cells;
@@ -29,6 +32,7 @@ public class MazeGenerator
     public int MazeSeed => _config.mazeSeed;
     public IReadOnlyDictionary<string, MazeWall> WallsMap => _wallsMap;
     public int VisibleWallCount { get; private set; }
+    public int VisitedCellCount { get; private set; }
     public int Fingerprint { get; private set; }
 
     public bool IsCellInBounds(int cellX, int cellY)
@@ -194,6 +198,21 @@ public class MazeGenerator
         CarveMaze(new System.Random(_config.mazeSeed));
         VisibleWallCount = _wallsMap.Values.Count(w => w.bVisible);
         Fingerprint = ComputeFingerprint();
+
+        int totalCells = _config.mazeWidthCells * _config.mazeHeightCells;
+        if (VisitedCellCount < totalCells)
+        {
+            Debug.LogWarning(
+                $"[MazeGenerator] Carving INCOMPLETE: {VisitedCellCount}/{totalCells} cells " +
+                $"(seed={_config.mazeSeed}, size={_config.mazeWidthCells}x{_config.mazeHeightCells}). " +
+                "Maze will only fill a small patch until this is fixed.");
+        }
+        else
+        {
+            Debug.Log(
+                $"[MazeGenerator] Carving OK: {VisitedCellCount}/{totalCells} cells " +
+                $"(seed={_config.mazeSeed}, visibleWalls={VisibleWallCount}).");
+        }
     }
 
     static string WallKey(Vector3 a, Vector3 b)
@@ -202,7 +221,20 @@ public class MazeGenerator
         int az = Mathf.RoundToInt(a.z);
         int bx = Mathf.RoundToInt(b.x);
         int bz = Mathf.RoundToInt(b.z);
-        return $"{ax}{az}{bx}{bz}";
+
+        // Canonical order so (a,b) and (b,a) share one key.
+        if (ax > bx || (ax == bx && az > bz))
+        {
+            int tx = ax;
+            int tz = az;
+            ax = bx;
+            az = bz;
+            bx = tx;
+            bz = tz;
+        }
+
+        // Delimiters prevent ambiguous keys on large mazes (e.g. 0,5,0,10 vs 0,50,10,0).
+        return ax + "|" + az + "|" + bx + "|" + bz;
     }
 
     public bool IsPassageOpen(int cellX, int cellY, int dirX, int dirZ)
@@ -269,9 +301,8 @@ public class MazeGenerator
     void AddOrShareWall(int currentId, int i, int j, Vector3 a, Vector3 b, int neighborId)
     {
         string key = WallKey(a, b);
-        string reverseKey = WallKey(b, a);
 
-        if (_wallsMap.ContainsKey(key) || _wallsMap.ContainsKey(reverseKey))
+        if (_wallsMap.ContainsKey(key))
         {
             _cells[i, j].walls.Add(key);
             return;
@@ -289,82 +320,89 @@ public class MazeGenerator
         _cells[i, j].walls.Add(key);
     }
 
-    MazeCell GetCell(int id)
-    {
-        int i = id % _config.mazeWidthCells;
-        int j = id / _config.mazeWidthCells;
-        return _cells[i, j];
-    }
-
     string ValidKey(Vector3 a, Vector3 b)
     {
         string key = WallKey(a, b);
-        if (_wallsMap.ContainsKey(key))
-            return key;
-
-        string reverseKey = WallKey(b, a);
-        if (_wallsMap.ContainsKey(reverseKey))
-            return reverseKey;
-
-        return "";
+        return _wallsMap.ContainsKey(key) ? key : "";
     }
 
-    void AddWalls(MazeCell cell, List<string> list)
+    string FindWallKeyBetween(int cellX, int cellY, int neighborX, int neighborY)
     {
-        TryAddWall(list, cell.A, new Vector3(cell.A.x, 0, cell.A.z - _config.cellSize));
-        TryAddWall(list, cell.A, new Vector3(cell.A.x - _config.cellSize, 0, cell.A.z));
+        int neighborId = neighborY * _config.mazeWidthCells + neighborX;
+        List<string> walls = _cells[cellX, cellY].walls;
 
-        TryAddWall(list, cell.B, new Vector3(cell.B.x, 0, cell.B.z - _config.cellSize));
-        TryAddWall(list, cell.B, new Vector3(cell.B.x + _config.cellSize, 0, cell.B.z));
+        for (int i = 0; i < walls.Count; i++)
+        {
+            if (!_wallsMap.TryGetValue(walls[i], out MazeWall wall))
+                continue;
 
-        TryAddWall(list, cell.D, new Vector3(cell.D.x, 0, cell.D.z + _config.cellSize));
-        TryAddWall(list, cell.D, new Vector3(cell.D.x + _config.cellSize, 0, cell.D.z));
+            if (wall.cell_id1 == neighborId || wall.cell_id2 == neighborId)
+                return walls[i];
+        }
 
-        TryAddWall(list, cell.C, new Vector3(cell.C.x - _config.cellSize, 0, cell.C.z));
-        TryAddWall(list, cell.C, new Vector3(cell.C.x, 0, cell.C.z + _config.cellSize));
-    }
-
-    void TryAddWall(List<string> list, Vector3 from, Vector3 to)
-    {
-        string key = ValidKey(from, to);
-        if (key != "")
-            list.Add(key);
+        return null;
     }
 
     void CarveMaze(System.Random rng)
     {
-        int startI = rng.Next(0, _config.mazeWidthCells);
-        int startJ = rng.Next(0, _config.mazeHeightCells);
+        int width = _config.mazeWidthCells;
+        int height = _config.mazeHeightCells;
+        int totalCells = width * height;
+
+        int startI = rng.Next(0, width);
+        int startJ = rng.Next(0, height);
         _cells[startI, startJ].bVisited = true;
+        VisitedCellCount = 1;
 
-        var frontier = new List<string>(_cells[startI, startJ].walls);
-        int maxIterations = 10000;
+        var stack = new Stack<(int x, int y)>();
+        stack.Push((startI, startJ));
 
-        while (frontier.Count > 0 && maxIterations > 0)
+        var candidates = new List<(int x, int y, string key)>(4);
+
+        while (stack.Count > 0)
         {
-            int k = rng.Next(0, frontier.Count);
-            string wallKey = frontier[k];
-            frontier.RemoveAt(k);
+            (int cx, int cy) = stack.Peek();
+            candidates.Clear();
 
-            if (!_wallsMap.TryGetValue(wallKey, out MazeWall wall))
-                continue;
-
-            MazeCell cell1 = GetCell(wall.cell_id1);
-            MazeCell cell2 = GetCell(wall.cell_id2);
-
-            if (cell1.bVisited ^ cell2.bVisited)
+            for (int d = 0; d < 4; d++)
             {
-                wall.bVisible = false;
-                _wallsMap[wallKey] = wall;
+                int nbrX = cx + CarveDx[d];
+                int nbrY = cy + CarveDy[d];
+                if (nbrX < 0 || nbrX >= width || nbrY < 0 || nbrY >= height)
+                    continue;
+                if (_cells[nbrX, nbrY].bVisited)
+                    continue;
 
-                int currentId = cell1.bVisited ? cell2.id : cell1.id;
-                int ii = currentId % _config.mazeWidthCells;
-                int jj = currentId / _config.mazeWidthCells;
-                _cells[ii, jj].bVisited = true;
-                AddWalls(_cells[ii, jj], frontier);
+                string wallKey = FindWallKeyBetween(cx, cy, nbrX, nbrY);
+                if (wallKey == null)
+                    continue;
+
+                candidates.Add((nbrX, nbrY, wallKey));
             }
 
-            maxIterations--;
+            if (candidates.Count == 0)
+            {
+                stack.Pop();
+                continue;
+            }
+
+            var chosen = candidates[rng.Next(candidates.Count)];
+
+            if (_wallsMap.TryGetValue(chosen.key, out MazeWall wall))
+            {
+                wall.bVisible = false;
+                _wallsMap[chosen.key] = wall;
+            }
+
+            _cells[chosen.x, chosen.y].bVisited = true;
+            VisitedCellCount++;
+            stack.Push((chosen.x, chosen.y));
+        }
+
+        if (VisitedCellCount < totalCells)
+        {
+            Debug.LogWarning(
+                $"[MazeGenerator] DFS carving stopped early: {VisitedCellCount}/{totalCells} cells.");
         }
     }
 

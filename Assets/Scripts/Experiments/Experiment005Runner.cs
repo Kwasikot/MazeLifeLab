@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[DefaultExecutionOrder(100)]
-public class Experiment004Runner : MonoBehaviour
+[DefaultExecutionOrder(110)]
+public class Experiment005Runner : MonoBehaviour
 {
     static readonly Color[] AgentColors =
     {
@@ -29,6 +29,9 @@ public class Experiment004Runner : MonoBehaviour
         new Color(0.95f, 0.95f, 0.95f)
     };
 
+    [SerializeField] Experiment005CommunicationMode communicationMode = Experiment005CommunicationMode.Trail;
+    [SerializeField] float signalDecayPerStep = 0.992f;
+    [SerializeField] float signalMaxCellStrength = 8f;
     [SerializeField] MazeGen mazeGen;
     [SerializeField] Experiment001Algorithm algorithm = Experiment001Algorithm.LocalRrt;
     [SerializeField] int agentCount = 2;
@@ -41,8 +44,14 @@ public class Experiment004Runner : MonoBehaviour
     [SerializeField] bool autoStartOnPlay = true;
     [SerializeField] bool disableSingleAgentRunner = true;
     [SerializeField] bool enableMetricsLogging = true;
-    [SerializeField] string metricsCsvRelativePath = "results/experiment_004_multi_agent.csv";
+    [SerializeField] string metricsCsvRelativePath = "results/experiment_005_multi_agent_signals.csv";
     [SerializeField] bool drawLocalRrtTreeForFirstAgentOnly = false;
+    [SerializeField] bool followAgentOnStart = false;
+    [SerializeField] bool frameAllAgentsOnStart = true;
+    [SerializeField] bool nearbyStartsForCommunication = true;
+    [SerializeField] int communicationStartSpacingCells = 6;
+    [SerializeField] bool showStigmergyField = true;
+    [SerializeField] int stigmergyVisualRefreshIntervalSteps = 8;
 
     readonly List<AgentRuntime> _agents = new List<AgentRuntime>();
     readonly HashSet<int> _teamVisitedCells = new HashSet<int>();
@@ -60,12 +69,17 @@ public class Experiment004Runner : MonoBehaviour
     float _overlapPercent;
     bool _isRunning;
     bool _anyAgentReachedGoal;
-    MultiAgentMetricsLogger _metricsLogger;
+    Experiment005MetricsLogger _metricsLogger;
+    MazeStigmergyField _stigmergyField;
+    MazeStigmergyVisualizer _stigmergyVisualizer;
+    int _signalInfluencedSteps;
     Transform _agentsRoot;
     bool _ignoreMazeRegenerated;
     bool _beginEpisodeInProgress;
     Coroutine _cameraSetupCoroutine;
+    int _spawnedForAgentCount = -1;
 
+    public Experiment005CommunicationMode CommunicationMode => communicationMode;
     public Experiment001Algorithm Algorithm => algorithm;
     public int ConfiguredAgentCount => agentCount;
     public int AgentCount => _agents.Count;
@@ -83,6 +97,7 @@ public class Experiment004Runner : MonoBehaviour
         public RandomWalkAgent RandomWalk;
         public WallFollowerAgent WallFollower;
         public LocalRrtAgent LocalRrt;
+        public AgentStigmergyController Stigmergy;
         public bool ReachedGoal;
     }
 
@@ -91,18 +106,32 @@ public class Experiment004Runner : MonoBehaviour
         if (mazeGen == null)
             mazeGen = GetComponent<MazeGen>();
 
-        _metricsLogger = new MultiAgentMetricsLogger(metricsCsvRelativePath, enableMetricsLogging);
+        _metricsLogger = new Experiment005MetricsLogger(metricsCsvRelativePath, enableMetricsLogging);
+        _stigmergyField = new MazeStigmergyField(signalDecayPerStep, signalMaxCellStrength);
+        ExperimentRunnerExclusivity.ActivateExclusive(this);
+    }
+
+    void DisableOtherRunners()
+    {
         ExperimentRunnerExclusivity.ActivateExclusive(this);
     }
 
     void DisableSingleAgentRunner()
     {
-        ExperimentRunnerExclusivity.ActivateExclusive(this);
+        DisableOtherRunners();
     }
 
     void OnValidate()
     {
-        agentCount = Mathf.Max(2, agentCount);
+        agentCount = Mathf.Clamp(agentCount, 2, 32);
+        if (agentCount > 4 && !drawLocalRrtTreeForFirstAgentOnly)
+            communicationStartSpacingCells = Mathf.Min(communicationStartSpacingCells, 4);
+
+        if (Application.isPlaying && isActiveAndEnabled && enabled &&
+            _spawnedForAgentCount >= 0 && _spawnedForAgentCount != agentCount)
+        {
+            BeginEpisode();
+        }
     }
 
     void OnEnable()
@@ -129,8 +158,26 @@ public class Experiment004Runner : MonoBehaviour
         if (!_isRunning || _agents.Count == 0)
             return;
 
+        if (communicationMode.DepositsSignals())
+            _stigmergyField?.DecayStep();
+
         ExecuteAgentSteps();
         TrackTeamMetrics();
+
+        if (showStigmergyField && communicationMode.DepositsSignals() &&
+            stigmergyVisualRefreshIntervalSteps > 0 &&
+            _steps % stigmergyVisualRefreshIntervalSteps == 0)
+        {
+            RefreshStigmergyVisual();
+        }
+
+        if (_steps > 0 && _steps % 1000 == 0)
+        {
+            Debug.Log(
+                $"[EXP-005] step={_steps} coverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
+                $"signals={_stigmergyField?.TotalDeposits ?? 0} signalSteps={_signalInfluencedSteps} " +
+                $"agentsAtGoal={_agentsAtGoal}/{_agents.Count}");
+        }
 
         _steps++;
 
@@ -218,7 +265,7 @@ public class Experiment004Runner : MonoBehaviour
         if (!isActiveAndEnabled)
         {
             Debug.LogWarning(
-                "[EXP-004] Experiment004Runner is disabled — enabling it so FixedUpdate can drive agents.");
+                "[EXP-005] Experiment004Runner is disabled — enabling it so FixedUpdate can drive agents.");
             enabled = true;
         }
 
@@ -228,19 +275,19 @@ public class Experiment004Runner : MonoBehaviour
         MazeGenerator generator = mazeGen.Generator;
         MazeCellIndex resolvedGoal = ResolveGoalCell(generator);
         _episodeMaxSteps = MultiAgentStartLayout.ResolveMaxSteps(maxSteps, generator);
-        List<MazeCellIndex> startCells = MultiAgentStartLayout.ResolveStartCells(
-            agentCount,
-            generator.Config.mazeWidthCells,
-            generator.Config.mazeHeightCells,
-            resolvedGoal);
+        List<MazeCellIndex> startCells = ResolveStartCells(generator, resolvedGoal);
 
         if (startCells.Count < agentCount)
         {
             Debug.LogError(
-                $"[EXP-004] Could not resolve {agentCount} distinct start cells away from goal {resolvedGoal}.");
+                $"[EXP-005] Could not resolve {agentCount} distinct start cells (got {startCells.Count}). " +
+                $"Check Nearby Starts For Communication / maze size.");
             EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
             return;
         }
+
+        if (startCells.Count > agentCount)
+            startCells.RemoveRange(agentCount, startCells.Count - agentCount);
 
         if (!ValidateEpisodeSetup(generator, resolvedGoal, startCells))
             return;
@@ -266,18 +313,100 @@ public class Experiment004Runner : MonoBehaviour
         _isRunning = true;
         Success = false;
         _anyAgentReachedGoal = false;
+        _signalInfluencedSteps = 0;
         TerminationReason = EpisodeTerminationReason.None;
 
+        _stigmergyField = new MazeStigmergyField(signalDecayPerStep, signalMaxCellStrength);
+        _stigmergyField.Reset(
+            generator.Config.mazeWidthCells,
+            generator.Config.mazeHeightCells);
+        EnsureStigmergyVisualizer();
+        RefreshStigmergyVisual();
+
         ConfigureActiveAlgorithms(generator, resolvedGoal);
-        EnsureCameraFollow(true);
-        ScheduleCameraFollowRefresh(true);
+        EnsureCameraFollow();
+        ScheduleCameraFollowRefresh();
         TrackTeamMetrics();
 
+        if (agentCount > 4 && !drawLocalRrtTreeForFirstAgentOnly)
+        {
+            Debug.LogWarning(
+                "[EXP-005] With many agents, enable Draw Local Rrt Tree For First Agent Only to avoid lag.");
+        }
+
         Debug.Log(
-            $"[EXP-004] episode started algorithm={algorithm} agents={_agents.Count} seed={generator.MazeSeed} " +
-            $"starts={FormatStartCells(startCells)} goal={resolvedGoal} maxSteps={_episodeMaxSteps}. " +
-            "No communication between agents.");
+            $"[EXP-005] episode started algorithm={algorithm} communication={communicationMode} agents={_agents.Count} " +
+            $"seed={generator.MazeSeed} starts={FormatStartCells(startCells)} goal={resolvedGoal} maxSteps={_episodeMaxSteps}. " +
+            GetCameraHint());
         LogSpawnedAgents(startCells);
+        _spawnedForAgentCount = agentCount;
+
+        if (_agents.Count != agentCount)
+        {
+            Debug.LogError(
+                $"[EXP-005] Spawn mismatch: configured={agentCount} spawned={_agents.Count}. " +
+                "Check Console for the active runner (EXP-006 may be overriding EXP-005).");
+        }
+    }
+
+    List<MazeCellIndex> ResolveStartCells(MazeGenerator generator, MazeCellIndex resolvedGoal)
+    {
+        if (nearbyStartsForCommunication && communicationMode != Experiment005CommunicationMode.None)
+        {
+            return MultiAgentStartLayout.ResolveNearbyCommunicationStarts(
+                agentCount,
+                generator.Config.mazeWidthCells,
+                generator.Config.mazeHeightCells,
+                resolvedGoal,
+                communicationStartSpacingCells);
+        }
+
+        return MultiAgentStartLayout.ResolveStartCells(
+            agentCount,
+            generator.Config.mazeWidthCells,
+            generator.Config.mazeHeightCells,
+            resolvedGoal);
+    }
+
+    string GetCameraHint()
+    {
+        if (frameAllAgentsOnStart && _agents.Count > 1)
+            return "Camera framing all agents (press F for full maze).";
+        if (followAgentOnStart)
+            return "Camera following Agent_0 (press F for full maze).";
+        return "Full maze view (press F to follow agents).";
+    }
+
+    void EnsureStigmergyVisualizer()
+    {
+        if (!showStigmergyField || !communicationMode.DepositsSignals())
+            return;
+
+        if (_stigmergyVisualizer == null)
+        {
+            var existing = GameObject.Find("StigmergyVisual");
+            if (existing != null)
+                _stigmergyVisualizer = existing.GetComponent<MazeStigmergyVisualizer>();
+
+            if (_stigmergyVisualizer == null)
+            {
+                var visualObject = new GameObject("StigmergyVisual");
+                visualObject.transform.SetParent(null);
+                visualObject.transform.position = Vector3.zero;
+                _stigmergyVisualizer = visualObject.AddComponent<MazeStigmergyVisualizer>();
+            }
+        }
+    }
+
+    void RefreshStigmergyVisual()
+    {
+        if (_stigmergyVisualizer == null || _stigmergyField == null || mazeGen == null || !mazeGen.HasGeneratedMaze)
+            return;
+
+        _stigmergyVisualizer.Rebuild(
+            _stigmergyField,
+            mazeGen.Config.cellSize,
+            signalMaxCellStrength);
     }
 
     [ContextMenu("Reset Episode")]
@@ -309,7 +438,7 @@ public class Experiment004Runner : MonoBehaviour
                     if (runtime.LocalRrt != null)
                         runtime.LocalRrt.ExecuteStep();
                     else
-                        Debug.LogError($"[EXP-004] Agent_{i} is missing LocalRrtAgent.");
+                        Debug.LogError($"[EXP-005] Agent_{i} is missing LocalRrtAgent.");
                     break;
             }
         }
@@ -323,6 +452,7 @@ public class Experiment004Runner : MonoBehaviour
         MazeGenerator generator = mazeGen.Generator;
         _totalCollisions = 0;
         _totalPathLength = 0f;
+        _signalInfluencedSteps = 0;
 
         for (int i = 0; i < _agents.Count; i++)
         {
@@ -339,7 +469,10 @@ public class Experiment004Runner : MonoBehaviour
             else if (IsWallFollowerAlgorithm() && runtime.WallFollower != null)
                 _totalCollisions += runtime.WallFollower.CollisionCount;
             else if (algorithm == Experiment001Algorithm.LocalRrt && runtime.LocalRrt != null)
+            {
                 _totalCollisions += runtime.LocalRrt.CollisionCount;
+                _signalInfluencedSteps += runtime.LocalRrt.SignalInfluencedSteps;
+            }
 
             if (!generator.TryWorldToCell(current, out int cellX, out int cellY))
                 continue;
@@ -393,6 +526,7 @@ public class Experiment004Runner : MonoBehaviour
             runtime.RandomWalk?.EndEpisode();
             runtime.WallFollower?.EndEpisode();
             runtime.LocalRrt?.EndEpisode();
+            runtime.Stigmergy?.EndEpisode();
 
             switch (algorithm)
             {
@@ -424,6 +558,17 @@ public class Experiment004Runner : MonoBehaviour
                         agentHeight,
                         i,
                         drawTree);
+                    runtime.Stigmergy.BeginEpisode(
+                        _stigmergyField,
+                        communicationMode,
+                        i,
+                        mazeSeed,
+                        generator);
+                    runtime.LocalRrt.ConfigureStigmergy(
+                        communicationMode.DepositsSignals() ? _stigmergyField : null,
+                        communicationMode.DepositsSignals() ? runtime.Stigmergy : null,
+                        communicationMode.EnablesSignalRead(),
+                        communicationMode.IgnoreOwnSignalsWhenReading());
                     break;
             }
         }
@@ -437,6 +582,7 @@ public class Experiment004Runner : MonoBehaviour
             runtime.RandomWalk?.EndEpisode();
             runtime.WallFollower?.EndEpisode();
             runtime.LocalRrt?.EndEpisode();
+            runtime.Stigmergy?.EndEpisode();
 
             if (runtime.Transform != null)
                 DestroyGameObjectImmediate(runtime.Transform.gameObject);
@@ -456,7 +602,8 @@ public class Experiment004Runner : MonoBehaviour
         DestroyExistingAgents();
         EnsureAgentsRoot();
 
-        float scale = agentCount <= 2 ? 1.5f : agentCount <= 4 ? 1.2f : 1f;
+        float scale = ExperimentAgentVisuals.ResolveAgentCubeScale(generator, agentCount);
+        float height = ExperimentAgentVisuals.ResolveAgentHeight(generator, agentHeight);
 
         for (int i = 0; i < startCells.Count; i++)
         {
@@ -469,15 +616,17 @@ public class Experiment004Runner : MonoBehaviour
             runtime.RandomWalk = agentObject.AddComponent<RandomWalkAgent>();
             runtime.WallFollower = agentObject.AddComponent<WallFollowerAgent>();
             runtime.LocalRrt = agentObject.AddComponent<LocalRrtAgent>();
+            runtime.Stigmergy = agentObject.AddComponent<AgentStigmergyController>();
             DisableShadows(agentObject);
 
             runtime.Transform.localScale = new Vector3(scale, scale * 0.66f, scale);
-            var renderer = runtime.Transform.GetComponent<Renderer>();
-            if (renderer != null)
-                renderer.material.color = AgentColors[i % AgentColors.Length];
+            ExperimentAgentVisuals.ApplyUnlitColor(
+                runtime.Transform.GetComponent<Renderer>(),
+                AgentColors[i % AgentColors.Length]);
+            AddAgentHeadMarker(runtime.Transform, AgentColors[i % AgentColors.Length], scale);
 
             Vector3 start = generator.GetCellCenterWorld(startCells[i].x, startCells[i].y);
-            start.y = agentHeight;
+            start.y = height;
             runtime.Transform.position = start;
             runtime.Transform.rotation = Quaternion.identity;
             runtime.LastPosition = start;
@@ -495,7 +644,7 @@ public class Experiment004Runner : MonoBehaviour
                 continue;
 
             Debug.Log(
-                $"[EXP-004] Agent_{i} startCell={startCells[i]} world=({t.position.x:F1},{t.position.z:F1})");
+                $"[EXP-005] Agent_{i} startCell={startCells[i]} world=({t.position.x:F1},{t.position.z:F1})");
         }
     }
 
@@ -568,17 +717,20 @@ public class Experiment004Runner : MonoBehaviour
             _agents[i].RandomWalk?.EndEpisode();
             _agents[i].WallFollower?.EndEpisode();
             _agents[i].LocalRrt?.EndEpisode();
+            _agents[i].Stigmergy?.EndEpisode();
         }
 
         WriteEpisodeMetrics(reason, success);
 
+        int signalsDeposited = _stigmergyField != null ? _stigmergyField.TotalDeposits : 0;
+
         Debug.LogWarning(
-            $"[EXP-004] episode ended reason={reason} success={success} steps={_steps} agents={_agents.Count}");
+            $"[EXP-005] episode ended reason={reason} success={success} steps={_steps} agents={_agents.Count}");
         Debug.Log(
-            $"[EXP-004] episode ended algorithm={algorithm} agents={_agents.Count} success={success} " +
-            $"steps={_steps} stepsToFirstGoal={_stepsToFirstGoal} agentsAtGoal={_agentsAtGoal} " +
-            $"collisions={_totalCollisions} pathLength={_totalPathLength:F1} " +
-            $"teamCoverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
+            $"[EXP-005] episode ended algorithm={algorithm} communication={communicationMode} agents={_agents.Count} " +
+            $"success={success} steps={_steps} stepsToFirstGoal={_stepsToFirstGoal} agentsAtGoal={_agentsAtGoal} " +
+            $"collisions={_totalCollisions} pathLength={_totalPathLength:F1} signals={signalsDeposited} " +
+            $"signalSteps={_signalInfluencedSteps} teamCoverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
             $"reason={reason} seed={mazeGen.Generator.MazeSeed}");
     }
 
@@ -587,10 +739,11 @@ public class Experiment004Runner : MonoBehaviour
         if (_metricsLogger == null || !enableMetricsLogging || mazeGen == null || !mazeGen.HasGeneratedMaze)
             return;
 
-        _metricsLogger.LogEpisode(new Experiment004EpisodeMetrics
+        _metricsLogger.LogEpisode(new Experiment005EpisodeMetrics
         {
             mazeSeed = mazeGen.Generator.MazeSeed,
             algorithm = algorithm.ToString(),
+            communicationMode = communicationMode.ToString(),
             agentCount = _agents.Count,
             success = success,
             steps = _steps,
@@ -600,6 +753,8 @@ public class Experiment004Runner : MonoBehaviour
             totalPathLength = _totalPathLength,
             teamCoveragePercent = _teamCoveragePercent,
             overlapPercent = _overlapPercent,
+            signalsDeposited = _stigmergyField != null ? _stigmergyField.TotalDeposits : 0,
+            signalInfluencedSteps = _signalInfluencedSteps,
             terminationReason = reason
         });
     }
@@ -608,7 +763,7 @@ public class Experiment004Runner : MonoBehaviour
     {
         if (mazeGen == null)
         {
-            Debug.LogError("[EXP-004] MazeGen reference is missing.");
+            Debug.LogError("[EXP-005] MazeGen reference is missing.");
             return false;
         }
 
@@ -634,14 +789,14 @@ public class Experiment004Runner : MonoBehaviour
     {
         if (agentCount < 2)
         {
-            Debug.LogError("[EXP-004] agentCount must be at least 2.");
+            Debug.LogError("[EXP-005] agentCount must be at least 2.");
             EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
             return false;
         }
 
         if (!generator.IsCellInBounds(resolvedGoal.x, resolvedGoal.y))
         {
-            Debug.LogError($"[EXP-004] Invalid goal cell: {resolvedGoal}");
+            Debug.LogError($"[EXP-005] Invalid goal cell: {resolvedGoal}");
             EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
             return false;
         }
@@ -652,14 +807,14 @@ public class Experiment004Runner : MonoBehaviour
             MazeCellIndex start = startCells[i];
             if (!generator.IsCellInBounds(start.x, start.y))
             {
-                Debug.LogError($"[EXP-004] Invalid start cell for agent {i}: {start}");
+                Debug.LogError($"[EXP-005] Invalid start cell for agent {i}: {start}");
                 EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
                 return false;
             }
 
             if (start.x == resolvedGoal.x && start.y == resolvedGoal.y)
             {
-                Debug.LogError($"[EXP-004] Agent {i} start overlaps goal: {start}");
+                Debug.LogError($"[EXP-005] Agent {i} start overlaps goal: {start}");
                 EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
                 return false;
             }
@@ -667,7 +822,7 @@ public class Experiment004Runner : MonoBehaviour
             int key = CellKey(start.x, start.y);
             if (!uniqueStarts.Add(key))
             {
-                Debug.LogError($"[EXP-004] Duplicate start cell for agent {i}: {start}");
+                Debug.LogError($"[EXP-005] Duplicate start cell for agent {i}: {start}");
                 EndEpisode(EpisodeTerminationReason.InvalidConfiguration, success: false);
                 return false;
             }
@@ -698,27 +853,27 @@ public class Experiment004Runner : MonoBehaviour
         }
     }
 
-    void ScheduleCameraFollowRefresh(bool showFullMaze)
+    void ScheduleCameraFollowRefresh()
     {
         if (_cameraSetupCoroutine != null)
             StopCoroutine(_cameraSetupCoroutine);
 
-        _cameraSetupCoroutine = StartCoroutine(RefreshCameraFollowNextFrame(showFullMaze));
+        _cameraSetupCoroutine = StartCoroutine(RefreshCameraFollowNextFrame());
     }
 
-    IEnumerator RefreshCameraFollowNextFrame(bool showFullMaze)
+    IEnumerator RefreshCameraFollowNextFrame()
     {
         yield return null;
-        EnsureCameraFollow(showFullMaze);
+        EnsureCameraFollow();
         _cameraSetupCoroutine = null;
     }
 
-    void EnsureCameraFollow(bool showFullMaze)
+    void EnsureCameraFollow()
     {
         Camera cam = Camera.main;
         if (cam == null)
         {
-            Debug.LogWarning("[EXP-004] Main Camera not found; top-down view was not configured.");
+            Debug.LogWarning("[EXP-005] Main Camera not found; top-down view was not configured.");
             return;
         }
 
@@ -726,7 +881,6 @@ public class Experiment004Runner : MonoBehaviour
         if (follow == null)
             follow = cam.gameObject.AddComponent<Experiment001CameraFollow>();
 
-        follow.Height = 80f;
         follow.ConfigureForMaze(
             mazeGen.Config.mazeWidthCells,
             mazeGen.Config.mazeHeightCells,
@@ -735,10 +889,40 @@ public class Experiment004Runner : MonoBehaviour
         if (_agents.Count > 0 && _agents[0].Transform != null)
             follow.Target = _agents[0].Transform;
 
-        if (showFullMaze)
-            follow.ShowFullMazeView(snapImmediately: true);
-        else
+        if (frameAllAgentsOnStart && _agents.Count > 1)
+        {
+            var transforms = new List<Transform>(_agents.Count);
+            for (int i = 0; i < _agents.Count; i++)
+            {
+                if (_agents[i].Transform != null)
+                    transforms.Add(_agents[i].Transform);
+            }
+
+            follow.FollowTeam(transforms, mazeGen.Config.cellSize, snapImmediately: true);
+        }
+        else if (followAgentOnStart)
+        {
             follow.FollowAgent(snapImmediately: true);
+        }
+        else
+        {
+            follow.ShowFullMazeView(snapImmediately: true);
+        }
+    }
+
+    static void AddAgentHeadMarker(Transform agentRoot, Color color, float agentScale)
+    {
+        var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        marker.name = "HeadMarker";
+        marker.transform.SetParent(agentRoot, false);
+        marker.transform.localPosition = new Vector3(0f, agentScale * 0.9f, 0f);
+        marker.transform.localScale = Vector3.one * (agentScale * 0.35f);
+
+        var collider = marker.GetComponent<Collider>();
+        if (collider != null)
+            Object.Destroy(collider);
+
+        ExperimentAgentVisuals.ApplyUnlitColor(marker.GetComponent<Renderer>(), color);
     }
 
     bool IsWallFollowerAlgorithm()
