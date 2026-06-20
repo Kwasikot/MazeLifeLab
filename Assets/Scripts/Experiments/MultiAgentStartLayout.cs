@@ -181,6 +181,99 @@ public static class MultiAgentStartLayout
         return starts;
     }
 
+    /// <summary>
+    /// Deterministic stratified-random starts: split the maze into coarse tiles and pick
+    /// one random cell inside each tile. This gives communication experiments broad
+    /// initial responsibility without sharing maps or spawning everyone in one corner.
+    /// </summary>
+    public static List<MazeCellIndex> ResolveDistributedRandomStarts(
+        int agentCount,
+        int mazeWidth,
+        int mazeHeight,
+        MazeCellIndex goalCell,
+        int mazeSeed,
+        int marginCells = 2)
+    {
+        var starts = new List<MazeCellIndex>();
+        if (agentCount <= 0 || mazeWidth <= 0 || mazeHeight <= 0)
+            return starts;
+
+        var rng = new System.Random(mazeSeed + agentCount * 1009 + mazeWidth * 9176 + mazeHeight * 3571);
+        int columns = Mathf.Max(1, Mathf.CeilToInt(Mathf.Sqrt(agentCount)));
+        int rows = Mathf.Max(1, Mathf.CeilToInt((float)agentCount / columns));
+        marginCells = Mathf.Max(0, marginCells);
+
+        var slots = new List<int>(columns * rows);
+        for (int i = 0; i < columns * rows; i++)
+            slots.Add(i);
+
+        Shuffle(slots, rng);
+
+        for (int i = 0; i < slots.Count && starts.Count < agentCount; i++)
+        {
+            int slot = slots[i];
+            int col = slot % columns;
+            int row = slot / columns;
+
+            int minX = Mathf.FloorToInt((float)col * mazeWidth / columns);
+            int maxX = Mathf.Max(minX, Mathf.CeilToInt((float)(col + 1) * mazeWidth / columns) - 1);
+            int minY = Mathf.FloorToInt((float)row * mazeHeight / rows);
+            int maxY = Mathf.Max(minY, Mathf.CeilToInt((float)(row + 1) * mazeHeight / rows) - 1);
+
+            minX = Mathf.Clamp(minX + marginCells, 0, mazeWidth - 1);
+            maxX = Mathf.Clamp(maxX - marginCells, 0, mazeWidth - 1);
+            minY = Mathf.Clamp(minY + marginCells, 0, mazeHeight - 1);
+            maxY = Mathf.Clamp(maxY - marginCells, 0, mazeHeight - 1);
+
+            if (minX > maxX)
+            {
+                minX = Mathf.FloorToInt((float)col * mazeWidth / columns);
+                maxX = Mathf.Max(minX, Mathf.CeilToInt((float)(col + 1) * mazeWidth / columns) - 1);
+            }
+
+            if (minY > maxY)
+            {
+                minY = Mathf.FloorToInt((float)row * mazeHeight / rows);
+                maxY = Mathf.Max(minY, Mathf.CeilToInt((float)(row + 1) * mazeHeight / rows) - 1);
+            }
+
+            bool added = false;
+            int attempts = Mathf.Max(8, (maxX - minX + 1) * (maxY - minY + 1));
+            for (int attempt = 0; attempt < attempts; attempt++)
+            {
+                var candidate = new MazeCellIndex(
+                    rng.Next(minX, maxX + 1),
+                    rng.Next(minY, maxY + 1));
+                if (IsSameCell(candidate, goalCell) || ContainsCell(starts, candidate))
+                    continue;
+
+                starts.Add(candidate);
+                added = true;
+                break;
+            }
+
+            if (!added)
+            {
+                var center = new MazeCellIndex((minX + maxX) / 2, (minY + maxY) / 2);
+                if (!IsSameCell(center, goalCell))
+                    AddUnique(starts, center);
+            }
+        }
+
+        if (starts.Count < agentCount)
+        {
+            List<MazeCellIndex> fallback = CollectExtendedCandidates(mazeWidth, mazeHeight, goalCell);
+            Shuffle(fallback, rng);
+            for (int i = 0; i < fallback.Count && starts.Count < agentCount; i++)
+                AddUnique(starts, fallback[i]);
+        }
+
+        while (starts.Count > agentCount)
+            starts.RemoveAt(starts.Count - 1);
+
+        return starts;
+    }
+
     static List<MazeCellIndex> CollectCorners(int mazeWidth, int mazeHeight, MazeCellIndex goalCell)
     {
         int lastX = mazeWidth - 1;
@@ -285,5 +378,16 @@ public static class MultiAgentStartLayout
     {
         if (!ContainsCell(cells, candidate))
             cells.Add(candidate);
+    }
+
+    static void Shuffle<T>(List<T> values, System.Random rng)
+    {
+        for (int i = values.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            T temp = values[i];
+            values[i] = values[j];
+            values[j] = temp;
+        }
     }
 }

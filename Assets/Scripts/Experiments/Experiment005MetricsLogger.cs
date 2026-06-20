@@ -20,6 +20,9 @@ public struct Experiment005EpisodeMetrics
     public float overlapPercent;
     public int signalsDeposited;
     public int signalInfluencedSteps;
+    public int frontierClaimsCreated;
+    public int claimConflicts;
+    public int claimedFrontierSteps;
     public EpisodeTerminationReason terminationReason;
 }
 
@@ -27,7 +30,8 @@ public sealed class Experiment005MetricsLogger
 {
     const string CsvHeader =
         "episode_id,maze_seed,algorithm,communication_mode,agent_count,success,steps,steps_to_first_goal,agents_at_goal," +
-        "total_collisions,total_path_length,team_coverage_percent,overlap_percent,signals_deposited,signal_influenced_steps,termination_reason";
+        "total_collisions,total_path_length,team_coverage_percent,overlap_percent,signals_deposited,signal_influenced_steps," +
+        "frontier_claims_created,claim_conflicts,claimed_frontier_steps,termination_reason";
 
     readonly string _filePath;
     readonly object _writeLock = new object();
@@ -127,6 +131,9 @@ public sealed class Experiment005MetricsLogger
             metrics.overlapPercent.ToString("F2", CultureInfo.InvariantCulture),
             metrics.signalsDeposited.ToString(CultureInfo.InvariantCulture),
             metrics.signalInfluencedSteps.ToString(CultureInfo.InvariantCulture),
+            metrics.frontierClaimsCreated.ToString(CultureInfo.InvariantCulture),
+            metrics.claimConflicts.ToString(CultureInfo.InvariantCulture),
+            metrics.claimedFrontierSteps.ToString(CultureInfo.InvariantCulture),
             EscapeCsvField(metrics.terminationReason.ToString()));
     }
 

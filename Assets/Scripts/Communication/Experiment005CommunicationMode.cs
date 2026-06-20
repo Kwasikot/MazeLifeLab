@@ -3,7 +3,8 @@ public enum Experiment005CommunicationMode
     None = 0,
     RandomNoise = 1,
     Trail = 2,
-    FrontierHint = 3
+    FrontierHint = 3,
+    FrontierClaim = 4
 }
 
 public static class Experiment005CommunicationModeExtensions

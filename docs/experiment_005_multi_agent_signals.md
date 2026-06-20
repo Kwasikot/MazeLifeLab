@@ -23,9 +23,13 @@ Compare against EXP-004 (`communication_mode=None`) on identical maze seeds, age
   - `RandomNoise` — control: random deposits near the agent.
   - `Trail` — hand-designed: deposit on each visited cell (path marking).
   - `FrontierHint` — hand-designed: deposit only on cells adjacent to undiscovered space.
+  - `FrontierClaim` — hand-designed coordination: agents publish temporary frontier responsibility claims, take one claim-guided step per tick (RRT still runs for visualization only), and bias away from regions already claimed by peers.
 - Algorithms: same as EXP-004 (`LocalRrt` default).
 - Local RRT may **bias movement** toward neighbouring cells with higher **foreign** signal (open passage required) when goal-directed steps fail.
-- `Trail` reads other agents' deposits only; `RandomNoise` deposits only (no read); `None` matches EXP-004.
+- `Trail` reads other agents' deposits only; `FrontierClaim` deposits visible smell but follows frontier claims rather than generic smell gradients; `RandomNoise` deposits only (no read); `None` matches EXP-004.
+- `FrontierClaim` uses deterministic stratified-random starts across the whole maze so responsibility claims are not anchored to one corner.
+- Frontier selection prefers the farthest reachable tier of frontiers, refreshes claims when the agent gets close or stops discovering new cells, and deposits smell once per visited cell so trails read as outward propagation rather than dense local blobs.
+- Signal deposits diffuse through known open passages over a small radius, with exponential decay controlling how long the smell remains useful.
 - CSV logging to `results/experiment_005_multi_agent_signals.csv`.
 
 ### Out of scope (later EXP-005+ / EXP-006)
@@ -41,8 +45,8 @@ Compare against EXP-004 (`communication_mode=None`) on identical maze seeds, age
 Same as EXP-004, plus:
 
 1. Reset stigmergy field at episode start.
-2. Each fixed step: decay field → agent actions → deposits on move.
-3. Log `communication_mode`, `signals_deposited`, `signal_influenced_steps`.
+2. Each fixed step: decay field and frontier claims → agent actions → deposits / claim refresh on move or replan.
+3. Log `communication_mode`, `signals_deposited`, `signal_influenced_steps`, and claim metrics.
 
 Termination unchanged: all agents at goal or `maxSteps`; success when any agent reaches goal (`steps_to_first_goal` recorded).
 
@@ -52,14 +56,18 @@ All EXP-004 team metrics, plus:
 
 | Column | Definition |
 |--------|------------|
-| `communication_mode` | `None`, `RandomNoise`, `Trail`, `FrontierHint` |
+| `communication_mode` | `None`, `RandomNoise`, `Trail`, `FrontierHint`, `FrontierClaim` |
 | `signals_deposited` | Total deposit operations this episode |
 | `signal_influenced_steps` | Agent steps where stigmergy bias changed movement choice |
+| `frontier_claims_created` | Number of agent frontier responsibility claims created |
+| `claim_conflicts` | Number of claims created inside another agent's active claim radius |
+| `claimed_frontier_steps` | Agent steps guided by claim-aware frontier responsibility |
 
 ## 6. Implementation
 
 ```text
 Assets/Scripts/Communication/MazeStigmergyField.cs
+Assets/Scripts/Communication/MazeFrontierClaimField.cs
 Assets/Scripts/Communication/AgentStigmergyController.cs
 Assets/Scripts/Communication/Experiment005CommunicationMode.cs
 Assets/Scripts/Experiments/Experiment005Runner.cs
@@ -73,9 +81,10 @@ Scene: `Experiment005Runner` on `MazeSystem` (disable `Experiment004Runner` when
 
 - [ ] `None` mode reproduces EXP-004 behaviour (no deposits, no bias).
 - [ ] `Trail` / `FrontierHint` deposit visible in metrics (`signals_deposited` > 0).
+- [ ] `FrontierClaim` creates non-zero `frontier_claims_created` and visibly separates claimed regions.
 - [ ] Agents still use independent local maps (no shared `MazeLocalDiscoveryMap`).
 - [ ] CSV row per episode with communication columns.
-- [ ] Side-by-side comparison possible: EXP-004 vs EXP-005 `None` vs EXP-005 `Trail` on seed 42.
+- [ ] Side-by-side comparison possible: EXP-004 vs EXP-005 `None` vs EXP-005 `Trail` vs EXP-005 `FrontierClaim` on seed 42.
 
 ## 8. Next Step
 

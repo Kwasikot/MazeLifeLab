@@ -103,16 +103,78 @@ public sealed class MazeStigmergyField
         out int dirX,
         out int dirZ)
     {
+        return TrySampleBiasStep(
+            cellX,
+            cellY,
+            readerAgentIndex,
+            ignoreOwnSignals,
+            truth,
+            null,
+            0f,
+            _maxCellStrength,
+            0f,
+            out dirX,
+            out dirZ);
+    }
+
+    /// <summary>
+    /// Stochastic step toward neighboring signals. Uses temperature sampling and optional
+    /// crowding penalty so saturated trails do not collapse every agent onto one corridor.
+    /// </summary>
+    public bool TrySampleBiasStep(
+        int cellX,
+        int cellY,
+        int readerAgentIndex,
+        bool ignoreOwnSignals,
+        MazeGenerator truth,
+        System.Random rng,
+        float temperature,
+        float crowdingPenalty,
+        out int dirX,
+        out int dirZ)
+    {
+        return TrySampleBiasStep(
+            cellX,
+            cellY,
+            readerAgentIndex,
+            ignoreOwnSignals,
+            truth,
+            rng,
+            temperature,
+            _maxCellStrength,
+            crowdingPenalty,
+            out dirX,
+            out dirZ);
+    }
+
+    public bool TrySampleBiasStep(
+        int cellX,
+        int cellY,
+        int readerAgentIndex,
+        bool ignoreOwnSignals,
+        MazeGenerator truth,
+        System.Random rng,
+        float temperature,
+        float maxStrength,
+        float crowdingPenalty,
+        out int dirX,
+        out int dirZ)
+    {
         dirX = 0;
         dirZ = 0;
 
-        if (_strength == null || truth == null)
+        if (_strength == null || truth == null || maxStrength <= 0f)
             return false;
 
         float bestStrength = 0f;
         int bestDirX = 0;
         int bestDirZ = 0;
-        bool found = false;
+
+        float totalWeight = 0f;
+        int candidateCount = 0;
+        int pickDirX = 0;
+        int pickDirY = 0;
+        float pickWeight = 0f;
 
         int[][] directions =
         {
@@ -138,21 +200,83 @@ public sealed class MazeStigmergyField
                 continue;
 
             float signal = _strength[nx, ny];
-            if (signal <= bestStrength)
+            if (signal <= 0.001f)
                 continue;
 
-            bestStrength = signal;
-            bestDirX = dx;
-            bestDirZ = dz;
-            found = true;
+            if (signal > bestStrength)
+            {
+                bestStrength = signal;
+                bestDirX = dx;
+                bestDirZ = dz;
+            }
+
+            float normalized = Mathf.Clamp01(signal / maxStrength);
+            float crowded = Mathf.Clamp01(crowdingPenalty) * normalized * normalized;
+            float weight = signal * (1f - crowded);
+            if (weight <= 0.001f)
+                continue;
+
+            if (temperature > 0.01f)
+                weight = Mathf.Pow(weight, 1f / temperature);
+
+            candidateCount++;
+            pickDirX = dx;
+            pickDirY = dz;
+            pickWeight = weight;
+            totalWeight += weight;
         }
 
-        if (!found || bestStrength <= 0f)
+        if (candidateCount == 0 || totalWeight <= 0f)
             return false;
 
-        dirX = bestDirX;
-        dirZ = bestDirZ;
-        return true;
+        if (rng == null || temperature <= 0.01f)
+        {
+            dirX = bestDirX;
+            dirZ = bestDirZ;
+            return bestStrength > 0f;
+        }
+
+        double roll = rng.NextDouble() * totalWeight;
+        float cumulative = 0f;
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            int dx = directions[i][0];
+            int dz = directions[i][1];
+            if (!truth.IsPassageOpen(cellX, cellY, dx, dz))
+                continue;
+
+            int nx = cellX + dx;
+            int ny = cellY + dz;
+            if (!IsInBounds(nx, ny))
+                continue;
+
+            if (ignoreOwnSignals && _lastDepositor[nx, ny] == readerAgentIndex)
+                continue;
+
+            float signal = _strength[nx, ny];
+            if (signal <= 0.001f)
+                continue;
+
+            float normalized = Mathf.Clamp01(signal / maxStrength);
+            float crowded = Mathf.Clamp01(crowdingPenalty) * normalized * normalized;
+            float weight = signal * (1f - crowded);
+            if (weight <= 0.001f)
+                continue;
+
+            weight = Mathf.Pow(weight, 1f / temperature);
+            cumulative += weight;
+            if (roll <= cumulative)
+            {
+                dirX = dx;
+                dirZ = dz;
+                return true;
+            }
+        }
+
+        dirX = pickDirX;
+        dirZ = pickDirY;
+        return pickWeight > 0f;
     }
 
     bool IsInBounds(int cellX, int cellY)

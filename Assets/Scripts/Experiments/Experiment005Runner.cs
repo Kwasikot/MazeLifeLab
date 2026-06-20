@@ -14,7 +14,11 @@ public class Experiment005Runner : MonoBehaviour
         new Color(0.55f, 1f, 0.35f),
         new Color(0.75f, 0.55f, 1f),
         new Color(0.35f, 1f, 0.85f),
-        new Color(1f, 0.45f, 0.45f)
+        new Color(1f, 0.45f, 0.45f),
+        new Color(0.95f, 0.95f, 0.95f),
+        new Color(0.6f, 0.4f, 0.2f),
+        new Color(0.2f, 0.45f, 1f),
+        new Color(0.85f, 0.2f, 0.55f)
     };
 
     static readonly Color[] AgentTreeColors =
@@ -29,9 +33,21 @@ public class Experiment005Runner : MonoBehaviour
         new Color(0.95f, 0.95f, 0.95f)
     };
 
-    [SerializeField] Experiment005CommunicationMode communicationMode = Experiment005CommunicationMode.Trail;
-    [SerializeField] float signalDecayPerStep = 0.992f;
+    [SerializeField] Experiment005CommunicationMode communicationMode = Experiment005CommunicationMode.FrontierClaim;
+    [SerializeField] float signalDecayPerStep = 0.995f;
     [SerializeField] float signalMaxCellStrength = 8f;
+    [SerializeField] float signalReadTemperature = 1.35f;
+    [SerializeField] float signalFollowChance = 0.45f;
+    [SerializeField] float signalCrowdingPenalty = 0.65f;
+    [SerializeField] float signalDepositNeighborSpread = 0.55f;
+    [SerializeField] int signalDepositSpreadRadiusCells = 3;
+    [SerializeField] float perAgentGoalBiasStep = 0.025f;
+    [SerializeField] int frontierClaimRadiusCells = 10;
+    [SerializeField] int frontierClaimTtlSteps = 36;
+    [SerializeField] float frontierClaimOwnWeight = 0f;
+    [SerializeField] float frontierClaimAvoidanceWeight = 10f;
+    [SerializeField] float frontierClaimExpansionWeight = 0.35f;
+    [SerializeField] float frontierClaimSectorWeight = 4f;
     [SerializeField] MazeGen mazeGen;
     [SerializeField] Experiment001Algorithm algorithm = Experiment001Algorithm.LocalRrt;
     [SerializeField] int agentCount = 2;
@@ -49,13 +65,17 @@ public class Experiment005Runner : MonoBehaviour
     [SerializeField] bool followAgentOnStart = false;
     [SerializeField] bool frameAllAgentsOnStart = true;
     [SerializeField] bool nearbyStartsForCommunication = true;
-    [SerializeField] int communicationStartSpacingCells = 6;
+    [SerializeField] int communicationStartSpacingCells = 12;
     [SerializeField] bool showStigmergyField = true;
     [SerializeField] int stigmergyVisualRefreshIntervalSteps = 8;
 
     readonly List<AgentRuntime> _agents = new List<AgentRuntime>();
     readonly HashSet<int> _teamVisitedCells = new HashSet<int>();
     readonly Dictionary<int, int> _cellAgentMask = new Dictionary<int, int>();
+    readonly List<MazeStigmergyVisualizer.AgentTrailLayer> _trailLayers = new List<MazeStigmergyVisualizer.AgentTrailLayer>();
+    readonly List<MazeStigmergyVisualizer.ClaimLayer> _claimLayers = new List<MazeStigmergyVisualizer.ClaimLayer>();
+    readonly List<FrontierClaimRecord> _claimRecordBuffer = new List<FrontierClaimRecord>();
+    readonly List<Vector2Int> _trailCellBuffer = new List<Vector2Int>();
 
     Vector3 _goalWorldPosition;
     int _steps;
@@ -71,8 +91,12 @@ public class Experiment005Runner : MonoBehaviour
     bool _anyAgentReachedGoal;
     Experiment005MetricsLogger _metricsLogger;
     MazeStigmergyField _stigmergyField;
+    MazeFrontierClaimField _frontierClaimField;
     MazeStigmergyVisualizer _stigmergyVisualizer;
     int _signalInfluencedSteps;
+    int _frontierClaimsCreated;
+    int _claimConflicts;
+    int _claimedFrontierSteps;
     Transform _agentsRoot;
     bool _ignoreMazeRegenerated;
     bool _beginEpisodeInProgress;
@@ -108,6 +132,7 @@ public class Experiment005Runner : MonoBehaviour
 
         _metricsLogger = new Experiment005MetricsLogger(metricsCsvRelativePath, enableMetricsLogging);
         _stigmergyField = new MazeStigmergyField(signalDecayPerStep, signalMaxCellStrength);
+        _frontierClaimField = new MazeFrontierClaimField();
         ExperimentRunnerExclusivity.ActivateExclusive(this);
     }
 
@@ -124,6 +149,13 @@ public class Experiment005Runner : MonoBehaviour
     void OnValidate()
     {
         agentCount = Mathf.Clamp(agentCount, 2, 32);
+        signalDepositSpreadRadiusCells = Mathf.Max(1, signalDepositSpreadRadiusCells);
+        frontierClaimRadiusCells = Mathf.Max(1, frontierClaimRadiusCells);
+        frontierClaimTtlSteps = Mathf.Max(1, frontierClaimTtlSteps);
+        frontierClaimOwnWeight = Mathf.Max(0f, frontierClaimOwnWeight);
+        frontierClaimAvoidanceWeight = Mathf.Max(0f, frontierClaimAvoidanceWeight);
+        frontierClaimExpansionWeight = Mathf.Max(0f, frontierClaimExpansionWeight);
+        frontierClaimSectorWeight = Mathf.Max(0f, frontierClaimSectorWeight);
         if (agentCount > 4 && !drawLocalRrtTreeForFirstAgentOnly)
             communicationStartSpacingCells = Mathf.Min(communicationStartSpacingCells, 4);
 
@@ -161,6 +193,9 @@ public class Experiment005Runner : MonoBehaviour
         if (communicationMode.DepositsSignals())
             _stigmergyField?.DecayStep();
 
+        if (communicationMode == Experiment005CommunicationMode.FrontierClaim)
+            _frontierClaimField?.Step();
+
         ExecuteAgentSteps();
         TrackTeamMetrics();
 
@@ -173,10 +208,7 @@ public class Experiment005Runner : MonoBehaviour
 
         if (_steps > 0 && _steps % 1000 == 0)
         {
-            Debug.Log(
-                $"[EXP-005] step={_steps} coverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
-                $"signals={_stigmergyField?.TotalDeposits ?? 0} signalSteps={_signalInfluencedSteps} " +
-                $"agentsAtGoal={_agentsAtGoal}/{_agents.Count}");
+            LogProgressSnapshot();
         }
 
         _steps++;
@@ -314,10 +346,17 @@ public class Experiment005Runner : MonoBehaviour
         Success = false;
         _anyAgentReachedGoal = false;
         _signalInfluencedSteps = 0;
+        _frontierClaimsCreated = 0;
+        _claimConflicts = 0;
+        _claimedFrontierSteps = 0;
         TerminationReason = EpisodeTerminationReason.None;
 
         _stigmergyField = new MazeStigmergyField(signalDecayPerStep, signalMaxCellStrength);
         _stigmergyField.Reset(
+            generator.Config.mazeWidthCells,
+            generator.Config.mazeHeightCells);
+        _frontierClaimField = new MazeFrontierClaimField();
+        _frontierClaimField.Reset(
             generator.Config.mazeWidthCells,
             generator.Config.mazeHeightCells);
         EnsureStigmergyVisualizer();
@@ -351,6 +390,17 @@ public class Experiment005Runner : MonoBehaviour
 
     List<MazeCellIndex> ResolveStartCells(MazeGenerator generator, MazeCellIndex resolvedGoal)
     {
+        if (communicationMode == Experiment005CommunicationMode.FrontierClaim)
+        {
+            return MultiAgentStartLayout.ResolveDistributedRandomStarts(
+                agentCount,
+                generator.Config.mazeWidthCells,
+                generator.Config.mazeHeightCells,
+                resolvedGoal,
+                generator.MazeSeed,
+                marginCells: 3);
+        }
+
         if (nearbyStartsForCommunication && communicationMode != Experiment005CommunicationMode.None)
         {
             return MultiAgentStartLayout.ResolveNearbyCommunicationStarts(
@@ -403,10 +453,82 @@ public class Experiment005Runner : MonoBehaviour
         if (_stigmergyVisualizer == null || _stigmergyField == null || mazeGen == null || !mazeGen.HasGeneratedMaze)
             return;
 
+        BuildAgentTrailLayers(_trailLayers);
+        BuildClaimLayers(_claimLayers);
+
         _stigmergyVisualizer.Rebuild(
             _stigmergyField,
             mazeGen.Config.cellSize,
-            signalMaxCellStrength);
+            signalMaxCellStrength,
+            _trailLayers,
+            _claimLayers);
+    }
+
+    void BuildAgentTrailLayers(List<MazeStigmergyVisualizer.AgentTrailLayer> layers)
+    {
+        layers.Clear();
+
+        for (int i = 0; i < _agents.Count; i++)
+        {
+            AgentStigmergyController stigmergy = _agents[i].Stigmergy;
+            if (stigmergy == null)
+                continue;
+
+            stigmergy.CopyTrailCells(_trailCellBuffer);
+            if (_trailCellBuffer.Count == 0)
+                continue;
+
+            Color agentColor = AgentColors[i % AgentColors.Length];
+            agentColor.a = 0.55f;
+
+            layers.Add(new MazeStigmergyVisualizer.AgentTrailLayer
+            {
+                AgentIndex = i,
+                Cells = new List<Vector2Int>(_trailCellBuffer),
+                Color = agentColor
+            });
+        }
+    }
+
+    void BuildClaimLayers(List<MazeStigmergyVisualizer.ClaimLayer> layers)
+    {
+        layers.Clear();
+        if (_frontierClaimField == null || communicationMode != Experiment005CommunicationMode.FrontierClaim)
+            return;
+
+        _frontierClaimField.CopyActiveClaims(_claimRecordBuffer);
+        for (int i = 0; i < _claimRecordBuffer.Count; i++)
+        {
+            FrontierClaimRecord claim = _claimRecordBuffer[i];
+            Color agentColor = AgentColors[claim.AgentIndex % AgentColors.Length];
+            agentColor.a = 0.18f;
+            layers.Add(new MazeStigmergyVisualizer.ClaimLayer
+            {
+                AgentIndex = claim.AgentIndex,
+                Center = new Vector2Int(claim.X, claim.Y),
+                RadiusCells = claim.RadiusCells,
+                Color = agentColor
+            });
+        }
+    }
+
+    void LogProgressSnapshot()
+    {
+        var parts = new List<string>(_agents.Count);
+        for (int i = 0; i < _agents.Count; i++)
+        {
+            AgentStigmergyController stigmergy = _agents[i].Stigmergy;
+            if (stigmergy == null)
+                continue;
+
+            parts.Add($"A{i}:trail={stigmergy.TrailCellCount} dep={stigmergy.Deposits}");
+        }
+
+        Debug.Log(
+            $"[EXP-005] step={_steps} coverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
+            $"signals={_stigmergyField?.TotalDeposits ?? 0} signalSteps={_signalInfluencedSteps} " +
+            $"claims={_frontierClaimsCreated} claimSteps={_claimedFrontierSteps} conflicts={_claimConflicts} " +
+            $"agentsAtGoal={_agentsAtGoal}/{_agents.Count} [{string.Join(", ", parts)}]");
     }
 
     [ContextMenu("Reset Episode")]
@@ -453,6 +575,9 @@ public class Experiment005Runner : MonoBehaviour
         _totalCollisions = 0;
         _totalPathLength = 0f;
         _signalInfluencedSteps = 0;
+        _frontierClaimsCreated = 0;
+        _claimedFrontierSteps = 0;
+        _claimConflicts = _frontierClaimField != null ? _frontierClaimField.ClaimConflicts : 0;
 
         for (int i = 0; i < _agents.Count; i++)
         {
@@ -472,6 +597,8 @@ public class Experiment005Runner : MonoBehaviour
             {
                 _totalCollisions += runtime.LocalRrt.CollisionCount;
                 _signalInfluencedSteps += runtime.LocalRrt.SignalInfluencedSteps;
+                _frontierClaimsCreated += runtime.LocalRrt.FrontierClaimsCreated;
+                _claimedFrontierSteps += runtime.LocalRrt.ClaimGuidedSteps;
             }
 
             if (!generator.TryWorldToCell(current, out int cellX, out int cellY))
@@ -519,6 +646,9 @@ public class Experiment005Runner : MonoBehaviour
     void ConfigureActiveAlgorithms(MazeGenerator generator, MazeCellIndex resolvedGoal)
     {
         int mazeSeed = generator.MazeSeed;
+        bool drawFirstOnly = drawLocalRrtTreeForFirstAgentOnly || agentCount > 4;
+        int mazeWidth = generator.Config.mazeWidthCells;
+        int mazeHeight = generator.Config.mazeHeightCells;
 
         for (int i = 0; i < _agents.Count; i++)
         {
@@ -546,10 +676,19 @@ public class Experiment005Runner : MonoBehaviour
                         agentHeight);
                     break;
                 case Experiment001Algorithm.LocalRrt:
-                    bool drawTree = !drawLocalRrtTreeForFirstAgentOnly || i == 0;
+                    var tuning = ExperimentMultiAgentPerformance.ResolveLocalRrtTuning(
+                        i,
+                        _agents.Count,
+                        mazeWidth,
+                        mazeHeight,
+                        drawFirstOnly);
                     Color treeColor = AgentTreeColors[i % AgentTreeColors.Length];
                     Color pathColor = new Color(treeColor.r * 0.85f, treeColor.g * 0.85f, treeColor.b * 0.85f, 1f);
+                    runtime.LocalRrt.ConfigurePerformance(
+                        tuning.RrtIterationsPerStep,
+                        tuning.ReplanIntervalSteps);
                     runtime.LocalRrt.ConfigureVisualization(treeColor, pathColor);
+                    runtime.LocalRrt.ConfigureDrawing(tuning.DrawTree, tuning.DrawPath);
                     runtime.LocalRrt.BeginEpisode(
                         mazeSeed,
                         generator,
@@ -557,7 +696,9 @@ public class Experiment005Runner : MonoBehaviour
                         resolvedGoal.y,
                         agentHeight,
                         i,
-                        drawTree);
+                        tuning.DrawTree || tuning.DrawPath);
+                    runtime.LocalRrt.ConfigureExploration(0.16f + (i % 8) * perAgentGoalBiasStep);
+                    runtime.Stigmergy.Configure(signalDepositNeighborSpread, signalDepositSpreadRadiusCells);
                     runtime.Stigmergy.BeginEpisode(
                         _stigmergyField,
                         communicationMode,
@@ -568,7 +709,22 @@ public class Experiment005Runner : MonoBehaviour
                         communicationMode.DepositsSignals() ? _stigmergyField : null,
                         communicationMode.DepositsSignals() ? runtime.Stigmergy : null,
                         communicationMode.EnablesSignalRead(),
-                        communicationMode.IgnoreOwnSignalsWhenReading());
+                        communicationMode.IgnoreOwnSignalsWhenReading(),
+                        signalFollowChance,
+                        signalReadTemperature,
+                        signalCrowdingPenalty,
+                        signalMaxCellStrength);
+                    runtime.LocalRrt.ConfigureFrontierClaims(
+                        communicationMode == Experiment005CommunicationMode.FrontierClaim ? _frontierClaimField : null,
+                        communicationMode == Experiment005CommunicationMode.FrontierClaim,
+                        frontierClaimRadiusCells,
+                        frontierClaimTtlSteps,
+                        frontierClaimOwnWeight,
+                        frontierClaimAvoidanceWeight,
+                        frontierClaimExpansionWeight,
+                        frontierClaimSectorWeight,
+                        _agents.Count);
+                    runtime.LocalRrt.RequestReplan();
                     break;
             }
         }
@@ -730,7 +886,8 @@ public class Experiment005Runner : MonoBehaviour
             $"[EXP-005] episode ended algorithm={algorithm} communication={communicationMode} agents={_agents.Count} " +
             $"success={success} steps={_steps} stepsToFirstGoal={_stepsToFirstGoal} agentsAtGoal={_agentsAtGoal} " +
             $"collisions={_totalCollisions} pathLength={_totalPathLength:F1} signals={signalsDeposited} " +
-            $"signalSteps={_signalInfluencedSteps} teamCoverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
+            $"signalSteps={_signalInfluencedSteps} claims={_frontierClaimsCreated} claimConflicts={_claimConflicts} " +
+            $"claimSteps={_claimedFrontierSteps} teamCoverage={_teamCoveragePercent:F1}% overlap={_overlapPercent:F1}% " +
             $"reason={reason} seed={mazeGen.Generator.MazeSeed}");
     }
 
@@ -755,6 +912,9 @@ public class Experiment005Runner : MonoBehaviour
             overlapPercent = _overlapPercent,
             signalsDeposited = _stigmergyField != null ? _stigmergyField.TotalDeposits : 0,
             signalInfluencedSteps = _signalInfluencedSteps,
+            frontierClaimsCreated = _frontierClaimsCreated,
+            claimConflicts = _claimConflicts,
+            claimedFrontierSteps = _claimedFrontierSteps,
             terminationReason = reason
         });
     }

@@ -35,20 +35,62 @@ public class LocalRrtAgent : MonoBehaviour
     int _collisionCount;
     int _failedPathMoves;
     int _stuckSteps;
+    int _stepsWithoutNewDiscovery;
+    int _lastDiscoveredCellCount;
     int _lastStuckCellX = -1;
     int _lastStuckCellY = -1;
+    int _previousCellX = -1;
+    int _previousCellY = -1;
 
     MazeStigmergyField _stigmergyField;
     AgentStigmergyController _stigmergy;
     bool _stigmergyReadEnabled;
     bool _stigmergyIgnoreOwnSignals;
+    float _signalFollowChance = 0.5f;
+    float _signalReadTemperature = 1.25f;
+    float _signalCrowdingPenalty = 0.65f;
+    float _signalMaxStrength = 8f;
     int _signalInfluencedSteps;
+
+    readonly Dictionary<long, int> _visitCounts = new Dictionary<long, int>();
+    readonly List<MazeFrontierCandidate> _frontierCandidates = new List<MazeFrontierCandidate>();
+    readonly List<Vector2Int> _recentCells = new List<Vector2Int>(RecentCellHistoryLimit);
+
+    MazeFrontierClaimField _frontierClaimField;
+    bool _frontierClaimsEnabled;
+    int _claimRadiusCells = 8;
+    int _claimTtlSteps = 80;
+    float _claimOwnWeight = 2f;
+    float _claimAvoidanceWeight = 6f;
+    float _claimExpansionWeight = 0.08f;
+    float _claimSectorWeight = 0.04f;
+    float _responsibilityAnchorX;
+    float _responsibilityAnchorY;
+    float _responsibilityDirX;
+    float _responsibilityDirY;
+    int _startCellX;
+    int _startCellY;
+    int _stepsSinceClaimRefresh;
+    int _claimedFrontierX = -1;
+    int _claimedFrontierY = -1;
+    int _frontierClaimsCreated;
+    int _claimGuidedSteps;
+
+    const int ExplorationStallStepThreshold = 12;
+    const int RecentCellHistoryLimit = 8;
+    const int LocalConfinementUniqueCellLimit = 3;
+    const int LocalConfinementSpanLimit = 5;
+    const float MinFrontierDistanceFraction = 0.55f;
+    const int ClaimReachedDistanceCells = 3;
+    const int ClaimRefreshDiscoveryStallSteps = 6;
 
     SwarmRrtField _swarmField;
     Experiment006SwarmMode _swarmMode = Experiment006SwarmMode.Independent;
     int _swarmGraftNodes;
 
     public int SignalInfluencedSteps => _signalInfluencedSteps;
+    public int FrontierClaimsCreated => _frontierClaimsCreated;
+    public int ClaimGuidedSteps => _claimGuidedSteps;
     public int SwarmGraftNodes => _swarmGraftNodes;
 
     public void ConfigureStigmergy(
@@ -57,11 +99,87 @@ public class LocalRrtAgent : MonoBehaviour
         bool enableReadBias,
         bool ignoreOwnSignals)
     {
+        ConfigureStigmergy(field, controller, enableReadBias, ignoreOwnSignals, 0.5f, 1.25f, 0.65f, 8f);
+    }
+
+    public void ConfigureStigmergy(
+        MazeStigmergyField field,
+        AgentStigmergyController controller,
+        bool enableReadBias,
+        bool ignoreOwnSignals,
+        float followChance,
+        float readTemperature,
+        float crowdingPenalty,
+        float maxSignalStrength)
+    {
         _stigmergyField = field;
         _stigmergy = controller;
         _stigmergyReadEnabled = enableReadBias && field != null;
         _stigmergyIgnoreOwnSignals = ignoreOwnSignals;
+        _signalFollowChance = Mathf.Clamp01(followChance);
+        _signalReadTemperature = Mathf.Max(0.01f, readTemperature);
+        _signalCrowdingPenalty = Mathf.Clamp01(crowdingPenalty);
+        _signalMaxStrength = Mathf.Max(0.1f, maxSignalStrength);
         _signalInfluencedSteps = 0;
+    }
+
+    public void ConfigureExploration(float goalBias)
+    {
+        rrtGoalBias = Mathf.Clamp(goalBias, 0.05f, 0.45f);
+    }
+
+    public void ConfigureFrontierClaims(
+        MazeFrontierClaimField field,
+        bool enabled,
+        int claimRadiusCells,
+        int claimTtlSteps,
+        float ownClaimWeight,
+        float avoidanceWeight,
+        float expansionWeight,
+        float sectorWeight,
+        int agentCount)
+    {
+        _frontierClaimField = field;
+        _frontierClaimsEnabled = enabled && field != null;
+        _claimRadiusCells = Mathf.Max(1, claimRadiusCells);
+        _claimTtlSteps = Mathf.Max(1, claimTtlSteps);
+        _claimOwnWeight = Mathf.Max(0f, ownClaimWeight);
+        _claimAvoidanceWeight = Mathf.Max(0f, avoidanceWeight);
+        _claimExpansionWeight = Mathf.Max(0f, expansionWeight);
+        _claimSectorWeight = Mathf.Max(0f, sectorWeight);
+        ResolveResponsibilityAnchor(Mathf.Max(1, agentCount));
+        _claimedFrontierX = -1;
+        _claimedFrontierY = -1;
+        _frontierClaimsCreated = 0;
+        _claimGuidedSteps = 0;
+        _stepsSinceClaimRefresh = 0;
+    }
+
+    void ResolveResponsibilityAnchor(int agentCount)
+    {
+        int columns = Mathf.Max(1, Mathf.CeilToInt(Mathf.Sqrt(agentCount)));
+        int rows = Mathf.Max(1, Mathf.CeilToInt((float)agentCount / columns));
+        int col = _agentIndex % columns;
+        int row = _agentIndex / columns;
+
+        float width = Mathf.Max(1, _map.WidthCells - 1);
+        float height = Mathf.Max(1, _map.HeightCells - 1);
+        _responsibilityAnchorX = width * (col + 0.5f) / columns;
+        _responsibilityAnchorY = height * (row + 0.5f) / rows;
+
+        float dx = _responsibilityAnchorX - _startCellX;
+        float dy = _responsibilityAnchorY - _startCellY;
+        float magnitude = Mathf.Sqrt(dx * dx + dy * dy);
+        if (magnitude <= 0.001f)
+        {
+            _responsibilityDirX = 0f;
+            _responsibilityDirY = 0f;
+        }
+        else
+        {
+            _responsibilityDirX = dx / magnitude;
+            _responsibilityDirY = dy / magnitude;
+        }
     }
 
     public void ConfigureSwarmRrt(SwarmRrtField field, Experiment006SwarmMode mode)
@@ -97,6 +215,14 @@ public class LocalRrtAgent : MonoBehaviour
         _drawTreeThisEpisode = drawTree || drawPath;
     }
 
+    public void RequestReplan()
+    {
+        if (!_enabled || _truth == null || _rng == null)
+            return;
+
+        Replan();
+    }
+
     public void ConfigureVisualization(Color treeColor, Color pathColor)
     {
         treeEdgeColor = treeColor;
@@ -125,11 +251,22 @@ public class LocalRrtAgent : MonoBehaviour
         _stepsSinceReplan = replanIntervalSteps;
         _failedPathMoves = 0;
         _stuckSteps = 0;
+        _stepsWithoutNewDiscovery = 0;
+        _lastDiscoveredCellCount = 0;
         _lastStuckCellX = -1;
         _lastStuckCellY = -1;
+        _previousCellX = -1;
+        _previousCellY = -1;
         LastPlanFound = false;
         _enabled = true;
         _visualizer = null;
+        _visitCounts.Clear();
+        _recentCells.Clear();
+        _frontierCandidates.Clear();
+        _claimedFrontierX = -1;
+        _claimedFrontierY = -1;
+        _frontierClaimsCreated = 0;
+        _claimGuidedSteps = 0;
 
         if (_drawTreeThisEpisode)
             EnsureVisualizer();
@@ -141,8 +278,12 @@ public class LocalRrtAgent : MonoBehaviour
             _cellX = 0;
             _cellY = 0;
         }
+        _startCellX = _cellX;
+        _startCellY = _cellY;
 
         Sense();
+        TrackDiscoveryProgress();
+        MarkVisit(_cellX, _cellY);
         Replan();
         SnapToGrid();
 
@@ -159,12 +300,17 @@ public class LocalRrtAgent : MonoBehaviour
         _stigmergyField = null;
         _stigmergy = null;
         _stigmergyReadEnabled = false;
+        _frontierClaimField = null;
+        _frontierClaimsEnabled = false;
+        _claimedFrontierX = -1;
+        _claimedFrontierY = -1;
         _swarmField = null;
         _swarmMode = Experiment006SwarmMode.Independent;
         _swarmGraftNodes = 0;
         _pathQueue.Clear();
         _plannedPath.Clear();
         _treeEdges.Clear();
+        _recentCells.Clear();
         if (_visualizer != null)
         {
             _visualizer.Clear();
@@ -178,11 +324,37 @@ public class LocalRrtAgent : MonoBehaviour
             return;
 
         Sense();
+        TrackDiscoveryProgress();
         _stepsSinceReplan++;
+        _stepsSinceClaimRefresh++;
         TrackStuckState();
 
         if (_stepsSinceReplan >= replanIntervalSteps || _pathQueue.Count == 0)
             Replan();
+
+        if (IsOscillating() || IsLocallyConfined())
+        {
+            BreakOscillation();
+            return;
+        }
+
+        if (_stepsWithoutNewDiscovery >= ExplorationStallStepThreshold)
+        {
+            _pathQueue.Clear();
+            _plannedPath.Clear();
+
+            if (TryMoveTowardBestClaimAwareFrontier(forceRefresh: true))
+                return;
+
+            if (TryMoveTowardRandomFrontier())
+                return;
+
+            if (TryMoveLeastVisitedOpenPassage(avoidImmediateBacktrack: true))
+                return;
+        }
+
+        if (_frontierClaimsEnabled && TryMoveTowardBestClaimAwareFrontier(forceRefresh: false))
+            return;
 
         if (_pathQueue.Count > 0)
         {
@@ -195,6 +367,19 @@ public class LocalRrtAgent : MonoBehaviour
                     next = _pathQueue[0];
                 else
                     return;
+            }
+
+            if (IsImmediateBacktrack(next.x, next.y) &&
+                HasAlternativeOpenPassage(_previousCellX, _previousCellY))
+            {
+                _pathQueue.RemoveAt(0);
+                if (_pathQueue.Count == 0)
+                {
+                    _stepsSinceReplan = replanIntervalSteps;
+                    return;
+                }
+
+                next = _pathQueue[0];
             }
 
             if (TryMoveToCell(next.x, next.y))
@@ -221,7 +406,16 @@ public class LocalRrtAgent : MonoBehaviour
 
         _failedPathMoves = 0;
 
-        if (_map.TryFindStepTowardFrontier(_cellX, _cellY, _goalCellX, _goalCellY, out int frontierDirX, out int frontierDirZ))
+        if (_map.TryFindFrontierMove(_cellX, _cellY, _rng, out int immediateFrontierDirX, out int immediateFrontierDirZ))
+        {
+            if (TryMoveByDirection(immediateFrontierDirX, immediateFrontierDirZ))
+            {
+                NotifyStigmergyDeposit();
+                return;
+            }
+            _collisionCount++;
+        }
+        else if (_map.TryFindStepTowardFrontier(_cellX, _cellY, _goalCellX, _goalCellY, out int frontierDirX, out int frontierDirZ))
         {
             if (TryMoveByDirection(frontierDirX, frontierDirZ))
             {
@@ -245,16 +439,6 @@ public class LocalRrtAgent : MonoBehaviour
         {
             return;
         }
-        else if (_map.TryFindFrontierMove(_cellX, _cellY, _rng, out int dirX, out int dirZ))
-        {
-            if (TryMoveByDirection(dirX, dirZ))
-            {
-                NotifyStigmergyDeposit();
-                return;
-            }
-
-            _collisionCount++;
-        }
         else if (TryEscapeViaOpenPassage())
         {
             NotifyStigmergyDeposit();
@@ -264,17 +448,260 @@ public class LocalRrtAgent : MonoBehaviour
         NotifyStigmergyDeposit();
     }
 
-    bool TryMoveViaStigmergyBias()
+    void TrackDiscoveryProgress()
     {
-        if (!_stigmergyReadEnabled || _stigmergyField == null)
+        int discovered = _map.DiscoveredCellCount;
+        if (discovered > _lastDiscoveredCellCount)
+        {
+            _lastDiscoveredCellCount = discovered;
+            _stepsWithoutNewDiscovery = 0;
+            return;
+        }
+
+        _stepsWithoutNewDiscovery++;
+    }
+
+    bool TryMoveTowardRandomFrontier()
+    {
+        if (!_map.TryFindStepTowardRandomFrontier(_cellX, _cellY, _rng, out int dirX, out int dirZ))
             return false;
 
-        if (!_stigmergyField.TryFindBiasStep(
+        if (!TryMoveByDirection(dirX, dirZ))
+            return false;
+
+        _stepsWithoutNewDiscovery = 0;
+        NotifyStigmergyDeposit();
+        return true;
+    }
+
+    void BreakOscillation()
+    {
+        _pathQueue.Clear();
+        _plannedPath.Clear();
+        _failedPathMoves = 0;
+        _stepsWithoutNewDiscovery = ExplorationStallStepThreshold;
+        _stepsSinceReplan = replanIntervalSteps;
+        _claimedFrontierX = -1;
+        _claimedFrontierY = -1;
+        _stepsSinceClaimRefresh = _claimTtlSteps;
+        _recentCells.Clear();
+
+        if (TryMoveLeastVisitedOpenPassage(avoidImmediateBacktrack: true))
+            return;
+
+        if (TryMoveTowardBestClaimAwareFrontier(forceRefresh: true))
+            return;
+
+        TryMoveTowardRandomFrontier();
+    }
+
+    bool TryMoveTowardBestClaimAwareFrontier(bool forceRefresh)
+    {
+        if (!_frontierClaimsEnabled)
+            return false;
+
+        if (!TryRefreshFrontierClaim(forceRefresh, out MazeFrontierCandidate target))
+            return false;
+
+        if (target.FirstStepX == 0 && target.FirstStepY == 0)
+            return false;
+
+        int stepX = _cellX + target.FirstStepX;
+        int stepY = _cellY + target.FirstStepY;
+        if (!forceRefresh &&
+            IsImmediateBacktrack(stepX, stepY) &&
+            HasAlternativeOpenPassage(_previousCellX, _previousCellY))
+        {
+            if (!TryRefreshFrontierClaim(forceRefresh: true, out target))
+                return false;
+
+            if (target.FirstStepX == 0 && target.FirstStepY == 0)
+                return false;
+
+            stepX = _cellX + target.FirstStepX;
+            stepY = _cellY + target.FirstStepY;
+            if (IsImmediateBacktrack(stepX, stepY))
+                return false;
+        }
+
+        if (!TryMoveByDirection(target.FirstStepX, target.FirstStepY))
+            return false;
+
+        _claimGuidedSteps++;
+        _stepsWithoutNewDiscovery = 0;
+        NotifyStigmergyDeposit();
+        return true;
+    }
+
+    bool TryRefreshFrontierClaim(bool forceRefresh, out MazeFrontierCandidate selected)
+    {
+        selected = new MazeFrontierCandidate();
+        if (!_frontierClaimsEnabled || _frontierClaimField == null || _rng == null)
+            return false;
+
+        _map.CollectReachableFrontiers(_cellX, _cellY, _goalCellX, _goalCellY, _frontierCandidates);
+        if (_frontierCandidates.Count == 0)
+            return false;
+
+        if (!forceRefresh && _stepsWithoutNewDiscovery >= ClaimRefreshDiscoveryStallSteps)
+            forceRefresh = true;
+
+        bool hasExistingClaim = _claimedFrontierX >= 0 &&
+                                _claimedFrontierY >= 0 &&
+                                _frontierClaimField.TryGetClaim(_agentIndex, out FrontierClaimRecord claim) &&
+                                claim.X == _claimedFrontierX &&
+                                claim.Y == _claimedFrontierY;
+        int distToClaim = hasExistingClaim
+            ? Mathf.Abs(_cellX - _claimedFrontierX) + Mathf.Abs(_cellY - _claimedFrontierY)
+            : int.MaxValue;
+        bool claimReached = distToClaim <= ClaimReachedDistanceCells;
+        int refreshInterval = Mathf.Max(4, _claimTtlSteps / 5);
+
+        if (!forceRefresh && hasExistingClaim && !claimReached && _stepsSinceClaimRefresh < refreshInterval)
+        {
+            for (int i = 0; i < _frontierCandidates.Count; i++)
+            {
+                MazeFrontierCandidate candidate = _frontierCandidates[i];
+                if (candidate.X != _claimedFrontierX || candidate.Y != _claimedFrontierY)
+                    continue;
+
+                if (candidate.FirstStepX == 0 && candidate.FirstStepY == 0)
+                    break;
+
+                selected = candidate;
+                _frontierClaimField.PublishClaim(
+                    _agentIndex,
+                    candidate.X,
+                    candidate.Y,
+                    _claimRadiusCells,
+                    _claimTtlSteps);
+                return true;
+            }
+        }
+
+        if (!TrySelectBestFrontierCandidate(out selected, out _))
+            return false;
+
+        _claimedFrontierX = selected.X;
+        _claimedFrontierY = selected.Y;
+        if (_frontierClaimField.PublishClaim(
+                _agentIndex,
+                selected.X,
+                selected.Y,
+                _claimRadiusCells,
+                _claimTtlSteps))
+        {
+            _stepsSinceClaimRefresh = 0;
+            _frontierClaimsCreated++;
+        }
+
+        return true;
+    }
+
+    bool TrySelectBestFrontierCandidate(out MazeFrontierCandidate selected, out float bestScore)
+    {
+        selected = new MazeFrontierCandidate();
+        bestScore = float.NegativeInfinity;
+
+        int maxReachableDistance = 0;
+        for (int i = 0; i < _frontierCandidates.Count; i++)
+        {
+            maxReachableDistance = Mathf.Max(
+                maxReachableDistance,
+                _frontierCandidates[i].DistanceFromStart);
+        }
+
+        int minReachableDistance = Mathf.Max(
+            1,
+            Mathf.CeilToInt(maxReachableDistance * MinFrontierDistanceFraction));
+
+        bool found = TrySelectBestFrontierCandidate(minReachableDistance, out selected, out bestScore);
+        if (found)
+            return true;
+
+        return TrySelectBestFrontierCandidate(1, out selected, out bestScore);
+    }
+
+    bool TrySelectBestFrontierCandidate(
+        int minReachableDistance,
+        out MazeFrontierCandidate selected,
+        out float bestScore)
+    {
+        selected = new MazeFrontierCandidate();
+        bestScore = float.NegativeInfinity;
+        bool found = false;
+
+        for (int i = 0; i < _frontierCandidates.Count; i++)
+        {
+            MazeFrontierCandidate candidate = _frontierCandidates[i];
+            if (candidate.FirstStepX == 0 && candidate.FirstStepY == 0)
+                continue;
+
+            if (candidate.DistanceFromStart < minReachableDistance)
+                continue;
+
+            float score = ScoreFrontierCandidate(candidate);
+            if (score <= bestScore)
+                continue;
+
+            bestScore = score;
+            selected = candidate;
+            found = true;
+        }
+
+        return found;
+    }
+
+    float ScoreFrontierCandidate(MazeFrontierCandidate candidate)
+    {
+        float peerClaim = _frontierClaimField.OtherClaimStrength(_agentIndex, candidate.X, candidate.Y);
+        int visits = _visitCounts.TryGetValue(CellKey(candidate.X, candidate.Y), out int count) ? count : 0;
+        int firstStepX = _cellX + candidate.FirstStepX;
+        int firstStepY = _cellY + candidate.FirstStepY;
+        int firstStepVisits = _visitCounts.TryGetValue(CellKey(firstStepX, firstStepY), out int stepCount)
+            ? stepCount
+            : 0;
+        float randomBonus = _rng.NextDouble() < 0.5 ? 0.05f : 0.1f;
+        float anchorDistance = Mathf.Abs(candidate.X - _responsibilityAnchorX) +
+                               Mathf.Abs(candidate.Y - _responsibilityAnchorY);
+        float maxAnchorDistance = Mathf.Max(1f, _map.WidthCells + _map.HeightCells);
+        float sectorAlignment = 1f - Mathf.Clamp01(anchorDistance / maxAnchorDistance);
+        float progressX = candidate.X - _startCellX;
+        float progressY = candidate.Y - _startCellY;
+        float directionalProgress = Mathf.Max(0f, progressX * _responsibilityDirX + progressY * _responsibilityDirY);
+        int distFromSpawn = Mathf.Abs(candidate.X - _startCellX) + Mathf.Abs(candidate.Y - _startCellY);
+        float backtrackPenalty = IsImmediateBacktrack(firstStepX, firstStepY) ? 12f : 0f;
+
+        return randomBonus
+               - peerClaim * _claimAvoidanceWeight
+               - visits * 1.25f
+               - firstStepVisits * 2.5f
+               - backtrackPenalty
+               + candidate.DistanceFromStart * _claimExpansionWeight
+               + distFromSpawn * _claimExpansionWeight * 0.35f
+               + directionalProgress * _claimExpansionWeight * 1.5f
+               + sectorAlignment * _claimSectorWeight
+               - candidate.DistanceToGoal * 0.0005f;
+    }
+
+    bool TryMoveViaStigmergyBias()
+    {
+        if (!_stigmergyReadEnabled || _stigmergyField == null || _rng == null)
+            return false;
+
+        if (_rng.NextDouble() > _signalFollowChance)
+            return false;
+
+        if (!_stigmergyField.TrySampleBiasStep(
                 _cellX,
                 _cellY,
                 _agentIndex,
                 _stigmergyIgnoreOwnSignals,
                 _truth,
+                _rng,
+                _signalReadTemperature,
+                _signalMaxStrength,
+                _signalCrowdingPenalty,
                 out int dirX,
                 out int dirZ))
             return false;
@@ -340,6 +767,88 @@ public class LocalRrtAgent : MonoBehaviour
         return false;
     }
 
+    bool TryMoveLeastVisitedOpenPassage(bool avoidImmediateBacktrack = false)
+    {
+        int[][] directions =
+        {
+            new[] { 0, 1 },
+            new[] { 1, 0 },
+            new[] { 0, -1 },
+            new[] { -1, 0 }
+        };
+
+        int bestDirX = 0;
+        int bestDirZ = 0;
+        int bestVisits = int.MaxValue;
+        bool found = false;
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            int dirX = directions[i][0];
+            int dirZ = directions[i][1];
+            if (!_truth.IsPassageOpen(_cellX, _cellY, dirX, dirZ))
+                continue;
+
+            int nextX = _cellX + dirX;
+            int nextY = _cellY + dirZ;
+            if (!_truth.IsCellInBounds(nextX, nextY))
+                continue;
+
+            if (avoidImmediateBacktrack &&
+                nextX == _previousCellX &&
+                nextY == _previousCellY &&
+                HasAlternativeOpenPassage(nextX, nextY))
+            {
+                continue;
+            }
+
+            int visits = _visitCounts.TryGetValue(CellKey(nextX, nextY), out int count) ? count : 0;
+            if (visits >= bestVisits)
+                continue;
+
+            bestVisits = visits;
+            bestDirX = dirX;
+            bestDirZ = dirZ;
+            found = true;
+        }
+
+        if (!found || !TryMoveByDirection(bestDirX, bestDirZ))
+            return false;
+
+        _stepsWithoutNewDiscovery = 0;
+        NotifyStigmergyDeposit();
+        return true;
+    }
+
+    bool HasAlternativeOpenPassage(int excludedX, int excludedY)
+    {
+        int[][] directions =
+        {
+            new[] { 0, 1 },
+            new[] { 1, 0 },
+            new[] { 0, -1 },
+            new[] { -1, 0 }
+        };
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            int dirX = directions[i][0];
+            int dirZ = directions[i][1];
+            if (!_truth.IsPassageOpen(_cellX, _cellY, dirX, dirZ))
+                continue;
+
+            int nextX = _cellX + dirX;
+            int nextY = _cellY + dirZ;
+            if (!_truth.IsCellInBounds(nextX, nextY))
+                continue;
+
+            if (nextX != excludedX || nextY != excludedY)
+                return true;
+        }
+
+        return false;
+    }
+
     void EnsureVisualizer()
     {
         var legacyOnAgent = GetComponent<LocalRrtTreeVisualizer>();
@@ -385,6 +894,16 @@ public class LocalRrtAgent : MonoBehaviour
         List<LocalRrtEdge> treeEdges;
         int nodesCreated;
         int graftCount = 0;
+        int planGoalX = _goalCellX;
+        int planGoalY = _goalCellY;
+
+        if (_frontierClaimsEnabled &&
+            !_map.IsCellDiscovered(_goalCellX, _goalCellY) &&
+            TryRefreshFrontierClaim(forceRefresh: false, out MazeFrontierCandidate claimTarget))
+        {
+            planGoalX = claimTarget.X;
+            planGoalY = claimTarget.Y;
+        }
 
         if (_swarmMode.UsesSwarmGraft() && _swarmField != null)
         {
@@ -392,8 +911,8 @@ public class LocalRrtAgent : MonoBehaviour
                 _map,
                 _cellX,
                 _cellY,
-                _goalCellX,
-                _goalCellY,
+                planGoalX,
+                planGoalY,
                 rrtIterationsPerStep,
                 rrtGoalBias,
                 _rng,
@@ -410,8 +929,8 @@ public class LocalRrtAgent : MonoBehaviour
                 _map,
                 _cellX,
                 _cellY,
-                _goalCellX,
-                _goalCellY,
+                planGoalX,
+                planGoalY,
                 rrtIterationsPerStep,
                 rrtGoalBias,
                 _rng,
@@ -434,8 +953,11 @@ public class LocalRrtAgent : MonoBehaviour
         if (LastPlanFound && path != null && path.Count > 1)
         {
             _plannedPath.AddRange(path);
-            for (int i = 1; i < path.Count; i++)
-                _pathQueue.Add(path[i]);
+            if (!_frontierClaimsEnabled)
+            {
+                for (int i = 1; i < path.Count; i++)
+                    _pathQueue.Add(path[i]);
+            }
         }
 
         RefreshVisualization();
@@ -484,8 +1006,11 @@ public class LocalRrtAgent : MonoBehaviour
         if (!_truth.IsCellInBounds(nextX, nextY))
             return false;
 
+        _previousCellX = _cellX;
+        _previousCellY = _cellY;
         _cellX = nextX;
         _cellY = nextY;
+        MarkVisit(_cellX, _cellY);
         SnapToGrid();
         return true;
     }
@@ -503,5 +1028,93 @@ public class LocalRrtAgent : MonoBehaviour
             if (look.sqrMagnitude > 0.01f)
                 transform.rotation = Quaternion.LookRotation(look.normalized);
         }
+    }
+
+    void MarkVisit(int cellX, int cellY)
+    {
+        long key = CellKey(cellX, cellY);
+        _visitCounts.TryGetValue(key, out int count);
+        _visitCounts[key] = count + 1;
+
+        _recentCells.Add(new Vector2Int(cellX, cellY));
+        if (_recentCells.Count > RecentCellHistoryLimit)
+            _recentCells.RemoveAt(0);
+    }
+
+    bool IsOscillating()
+    {
+        if (_recentCells.Count < 4)
+            return false;
+
+        int last = _recentCells.Count - 1;
+        Vector2Int a0 = _recentCells[last];
+        Vector2Int b0 = _recentCells[last - 1];
+        Vector2Int a1 = _recentCells[last - 2];
+        Vector2Int b1 = _recentCells[last - 3];
+
+        if (a0 == a1 && b0 == b1 && a0 != b0)
+            return true;
+
+        if (_recentCells.Count < 6)
+            return false;
+
+        Vector2Int a2 = _recentCells[last - 4];
+        Vector2Int b2 = _recentCells[last - 5];
+        return a0 == a1 && a1 == a2 &&
+               b0 == b1 && b1 == b2 &&
+               a0 != b0;
+    }
+
+    bool IsLocallyConfined()
+    {
+        int count = _recentCells.Count;
+        if (count < 6)
+            return false;
+
+        int minX = int.MaxValue;
+        int maxX = int.MinValue;
+        int minY = int.MaxValue;
+        int maxY = int.MinValue;
+        int uniqueCount = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            Vector2Int cell = _recentCells[i];
+            minX = Mathf.Min(minX, cell.x);
+            maxX = Mathf.Max(maxX, cell.x);
+            minY = Mathf.Min(minY, cell.y);
+            maxY = Mathf.Max(maxY, cell.y);
+
+            bool isNew = true;
+            for (int j = 0; j < i; j++)
+            {
+                if (_recentCells[j] == cell)
+                {
+                    isNew = false;
+                    break;
+                }
+            }
+
+            if (isNew)
+                uniqueCount++;
+        }
+
+        if (uniqueCount <= LocalConfinementUniqueCellLimit)
+            return true;
+
+        return (maxX - minX) + (maxY - minY) <= LocalConfinementSpanLimit;
+    }
+
+    bool IsImmediateBacktrack(int targetX, int targetY)
+    {
+        return _previousCellX >= 0 &&
+               _previousCellY >= 0 &&
+               targetX == _previousCellX &&
+               targetY == _previousCellY;
+    }
+
+    static long CellKey(int cellX, int cellY)
+    {
+        return ((long)cellX << 32) | (uint)cellY;
     }
 }

@@ -228,6 +228,137 @@ public class MazeLocalDiscoveryMap
     }
 
     /// <summary>
+    /// BFS through discovered cells and choose a reachable frontier at random.
+    /// This is used as an escape behavior when an agent keeps moving locally
+    /// without increasing its discovered area.
+    /// </summary>
+    public bool TryFindStepTowardRandomFrontier(
+        int startX,
+        int startY,
+        System.Random rng,
+        out int dirX,
+        out int dirZ)
+    {
+        dirX = 0;
+        dirZ = 0;
+
+        if (rng == null)
+            return false;
+
+        var queue = new Queue<Vector2Int>();
+        var visited = new HashSet<long>();
+        var firstStep = new Dictionary<long, Vector2Int>();
+        var frontiers = new List<Vector2Int>();
+
+        long startKey = CellKey(startX, startY);
+        queue.Enqueue(new Vector2Int(startX, startY));
+        visited.Add(startKey);
+
+        while (queue.Count > 0)
+        {
+            Vector2Int cell = queue.Dequeue();
+            if ((cell.x != startX || cell.y != startY) && HasUndiscoveredNeighbor(cell.x, cell.y))
+                frontiers.Add(cell);
+
+            foreach (int[] dir in CardinalDirections)
+            {
+                if (!IsPassageTraversable(cell.x, cell.y, dir[0], dir[1]))
+                    continue;
+
+                int nx = cell.x + dir[0];
+                int ny = cell.y + dir[1];
+                if (!IsInBounds(nx, ny) || !IsCellDiscovered(nx, ny))
+                    continue;
+
+                long key = CellKey(nx, ny);
+                if (!visited.Add(key))
+                    continue;
+
+                Vector2Int step = cell.x == startX && cell.y == startY
+                    ? new Vector2Int(dir[0], dir[1])
+                    : firstStep[CellKey(cell.x, cell.y)];
+
+                firstStep[key] = step;
+                queue.Enqueue(new Vector2Int(nx, ny));
+            }
+        }
+
+        if (frontiers.Count == 0)
+            return false;
+
+        Vector2Int picked = frontiers[rng.Next(frontiers.Count)];
+        Vector2Int first = firstStep[CellKey(picked.x, picked.y)];
+        dirX = first.x;
+        dirZ = first.y;
+        return dirX != 0 || dirZ != 0;
+    }
+
+    public void CollectReachableFrontiers(
+        int startX,
+        int startY,
+        int goalX,
+        int goalY,
+        List<MazeFrontierCandidate> outCandidates)
+    {
+        outCandidates.Clear();
+
+        var queue = new Queue<Vector2Int>();
+        var visited = new HashSet<long>();
+        var firstStep = new Dictionary<long, Vector2Int>();
+        var distanceFromStart = new Dictionary<long, int>();
+
+        long startKey = CellKey(startX, startY);
+        queue.Enqueue(new Vector2Int(startX, startY));
+        visited.Add(startKey);
+        distanceFromStart[startKey] = 0;
+
+        while (queue.Count > 0)
+        {
+            Vector2Int cell = queue.Dequeue();
+            long cellKey = CellKey(cell.x, cell.y);
+            int distance = distanceFromStart[cellKey];
+
+            if (HasUndiscoveredNeighbor(cell.x, cell.y))
+            {
+                Vector2Int step = cell.x == startX && cell.y == startY
+                    ? Vector2Int.zero
+                    : firstStep[cellKey];
+
+                outCandidates.Add(new MazeFrontierCandidate(
+                    cell.x,
+                    cell.y,
+                    step.x,
+                    step.y,
+                    distance,
+                    ManhattanDistance(cell.x, cell.y, goalX, goalY)));
+            }
+
+            foreach (int[] dir in CardinalDirections)
+            {
+                if (!IsPassageTraversable(cell.x, cell.y, dir[0], dir[1]))
+                    continue;
+
+                int nx = cell.x + dir[0];
+                int ny = cell.y + dir[1];
+                if (!IsInBounds(nx, ny) || !IsCellDiscovered(nx, ny))
+                    continue;
+
+                long key = CellKey(nx, ny);
+                if (!visited.Add(key))
+                    continue;
+
+                Vector2Int step = cell.x == startX && cell.y == startY
+                    ? new Vector2Int(dir[0], dir[1])
+                    : firstStep[cellKey];
+
+                firstStep[key] = step;
+                distanceFromStart[key] = distance + 1;
+                queue.Enqueue(new Vector2Int(nx, ny));
+            }
+        }
+    }
+
+    /// <summary>
     /// Greedy step through known-open passages that reduces Manhattan distance to goal.
     /// </summary>
     public bool TryFindGreedyGoalStep(int cellX, int cellY, int goalX, int goalY, out int dirX, out int dirZ)
@@ -359,4 +490,30 @@ public class MazeLocalDiscoveryMap
         new[] { 0, -1 },
         new[] { -1, 0 }
     };
+}
+
+public readonly struct MazeFrontierCandidate
+{
+    public readonly int X;
+    public readonly int Y;
+    public readonly int FirstStepX;
+    public readonly int FirstStepY;
+    public readonly int DistanceFromStart;
+    public readonly int DistanceToGoal;
+
+    public MazeFrontierCandidate(
+        int x,
+        int y,
+        int firstStepX,
+        int firstStepY,
+        int distanceFromStart,
+        int distanceToGoal)
+    {
+        X = x;
+        Y = y;
+        FirstStepX = firstStepX;
+        FirstStepY = firstStepY;
+        DistanceFromStart = distanceFromStart;
+        DistanceToGoal = distanceToGoal;
+    }
 }

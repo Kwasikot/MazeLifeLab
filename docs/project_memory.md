@@ -92,11 +92,12 @@ Experiment004RunnerEditor
 
 ```text
 MazeStigmergyField (decaying per-cell environmental signals)
-AgentStigmergyController (Trail / FrontierHint / RandomNoise deposit modes)
+MazeFrontierClaimField (temporary frontier responsibility claims per agent)
+AgentStigmergyController (Trail / FrontierHint / RandomNoise / FrontierClaim deposit modes)
 Experiment005Runner (extends multi-agent loop with communication ablation)
-Experiment005MetricsLogger (signals_deposited, signal_influenced_steps)
+Experiment005MetricsLogger (signals_deposited, signal_influenced_steps, frontier claim metrics)
 Experiment005RunnerEditor
-LocalRrtAgent stigmergy read bias (optional, no shared discovery map)
+LocalRrtAgent stigmergy read bias and claim-aware frontier selection (optional, no shared discovery map)
 ```
 
 # Implemented For EXP-006
@@ -218,7 +219,7 @@ Collective exploration under partial observability using simple local communicat
 
 # Next Recommended Task
 
-Verify EXP-005 in Play mode (`communication_mode=Trail`), then compare CSV against EXP-004 on seed 42.
+Verify EXP-005 in Play mode (`communication_mode=FrontierClaim`), then compare CSV against EXP-004 and EXP-005 `Trail` / `FrontierHint` on seed 42.
 
 ---
 

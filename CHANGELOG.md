@@ -23,6 +23,7 @@ This project follows a research-oriented changelog discipline: changes should be
   - `LocalRrtAgent.ConfigureSwarmRrt` (optional edge deposit + foreign-node graft)
 - Added EXP-005 multi-agent exploration with environmental stigmergy signals:
   - `Assets/Scripts/Communication/MazeStigmergyField.cs`
+  - `Assets/Scripts/Communication/MazeFrontierClaimField.cs`
   - `Assets/Scripts/Communication/AgentStigmergyController.cs`
   - `Assets/Scripts/Communication/Experiment005CommunicationMode.cs`
   - `Assets/Scripts/Experiments/Experiment005Runner.cs`
@@ -30,7 +31,7 @@ This project follows a research-oriented changelog discipline: changes should be
   - `Assets/Editor/Experiment005RunnerEditor.cs`
   - `docs/experiment_005_multi_agent_signals.md`
   - CSV output: `results/experiment_005_multi_agent_signals.csv`
-  - Communication modes: `None`, `RandomNoise`, `Trail`, `FrontierHint`
+  - Communication modes: `None`, `RandomNoise`, `Trail`, `FrontierHint`, `FrontierClaim`
 - Added EXP-004 multi-agent exploration without communication:
   - `Assets/Scripts/Experiments/Experiment004Runner.cs`
   - `Assets/Scripts/Experiments/MultiAgentMetricsLogger.cs`
@@ -70,6 +71,16 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Changed
 
+- Changed EXP-005 coordination with `FrontierClaim` mode: agents publish temporary frontier responsibility claims, bias local RRT planning toward their own claimed frontier, and avoid duplicating peers' claimed regions.
+- Changed `FrontierClaim` scoring to reward outward reachable frontiers and soft per-agent responsibility anchors across the maze, reducing dense local-region coverage.
+- Tuned `FrontierClaim` to refresh claims sooner and reward directional progress from each agent's start toward its responsibility anchor, helping coverage expand beyond the initial local patch.
+- Changed EXP-005 `FrontierClaim` starts to deterministic stratified-random cells across the full maze instead of a corner cluster.
+- Changed EXP-005 smell deposits to diffuse through open passages over a configurable radius and tuned defaults for longer-lived signals.
+- Changed `FrontierClaim` so agents no longer use generic smell-gradient following; smell remains visible/deposited while movement is driven by claims and frontier selection.
+- Changed `LocalRrtAgent` to detect short A-B-A-B movement oscillations, clear the current plan/claim, and prefer a least-visited non-backtracking escape move.
+- Changed `FrontierClaim` movement to one claim-guided step per tick instead of following multi-step RRT paths, with immediate backtrack suppression and local confinement detection (≤3 unique cells in recent history) to break small looping territories.
+- Tuned `FrontierClaim` outward propagation: prefer farthest-tier reachable frontiers, refresh claims when reached or stalled, reward distance from spawn, and deposit smell once per cell (trails instead of dense local blobs).
+- Changed `LocalRrtAgent` exploration fallback so agents that move without discovering new cells clear local plans, seek a random reachable frontier, and then prefer least-visited open passages before continuing local movement.
 - Reframed the project direction toward a reproducible artificial life and maze-navigation research platform.
 - Clarified that `EXP-001 — Single-Agent Navigation Benchmark` is the current active implementation focus before RRT, ML-Agents, multi-agent communication, or Swarm-RRT.
 - Clarified that Theory of Mind, self-state modelling, social cognition, and knowledge-state estimation are late-stage research directions, not implementation tasks for EXP-001 or EXP-002.
@@ -108,11 +119,11 @@ This project follows a research-oriented changelog discipline: changes should be
   - validate LocalRrt on seed 42;
   - MetricsLogger (CSV) — EXP-001 Days 8–9;
   - batch comparison vs WallFollower.
-- Metrics impacted: episode logs include `steps`, `collisions`, `pathLength`; CSV export pending.
-- Scientific reason: deterministic seeds and comparable baselines before batch evaluation.
+- Metrics impacted: EXP-005 CSV includes `frontier_claims_created`, `claim_conflicts`, and `claimed_frontier_steps` in addition to signal metrics.
+- Scientific reason: test whether dynamic responsibility claims reduce duplicate exploration compared with no-communication, random signals, trails, and frontier hints.
 - Risks / limitations:
   - wall-following may loop on non-simply-connected mazes (documented in EXP-001 spec);
-  - RandomWalk still uses geometric raycast sensing (WallFollower uses grid topology).
+  - `FrontierClaim` is hand-designed communication semantics and must be ablated against simpler signal modes before treating it as evidence of emergent coordination.
 
 ---
 

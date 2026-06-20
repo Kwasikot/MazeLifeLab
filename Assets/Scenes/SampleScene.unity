@@ -453,9 +453,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6887ccd46b8adce42beee73d4edf9baf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  communicationMode: 2
-  signalDecayPerStep: 0.992
+  communicationMode: 4
+  signalDecayPerStep: 0.995
   signalMaxCellStrength: 8
+  signalReadTemperature: 1.35
+  signalFollowChance: 0.45
+  signalCrowdingPenalty: 0.65
+  signalDepositNeighborSpread: 0.55
+  signalDepositSpreadRadiusCells: 3
+  perAgentGoalBiasStep: 0.025
+  frontierClaimRadiusCells: 10
+  frontierClaimTtlSteps: 36
+  frontierClaimOwnWeight: 0
+  frontierClaimAvoidanceWeight: 10
+  frontierClaimExpansionWeight: 0.35
+  frontierClaimSectorWeight: 4
   mazeGen: {fileID: 910000002}
   algorithm: 4
   agentCount: 10
@@ -475,7 +487,7 @@ MonoBehaviour:
   followAgentOnStart: 0
   frameAllAgentsOnStart: 1
   nearbyStartsForCommunication: 1
-  communicationStartSpacingCells: 4
+  communicationStartSpacingCells: 12
   showStigmergyField: 1
   stigmergyVisualRefreshIntervalSteps: 8
 --- !u!114 &910000007
