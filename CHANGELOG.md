@@ -10,6 +10,10 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added swarm-flight research agenda:
+  - `docs/swarm_flight_research_agenda.md`
+  - Experiment sequence: `EXP-SWARM-001` through `EXP-SWARM-007`
+  - Algorithm proposal: `Scented Active Boids`
 - Added EXP-006 Swarm-RRT / distributed search trees:
   - `Assets/Scripts/Planning/SwarmRrtField.cs`
   - `Assets/Scripts/Planning/SwarmRrtPlanner.cs`
@@ -71,6 +75,10 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Changed
 
+- Pivoted the active research direction from RRT-centered maze path planning to swarm-based flying artificial life agents.
+- Changed active experiment in project memory to `EXP-SWARM-001 — 3D Boids Baseline`.
+- Marked RRT, Local RRT, and Swarm-RRT as historical / archived research work unless explicitly revived as comparison baselines.
+- Updated README to point to `docs/swarm_flight_research_agenda.md` as the active direction.
 - Changed EXP-005 coordination with `FrontierClaim` mode: agents publish temporary frontier responsibility claims, bias local RRT planning toward their own claimed frontier, and avoid duplicating peers' claimed regions.
 - Changed `FrontierClaim` scoring to reward outward reachable frontiers and soft per-agent responsibility anchors across the maze, reducing dense local-region coverage.
 - Tuned `FrontierClaim` to refresh claims sooner and reward directional progress from each agent's start toward its responsibility anchor, helping coverage expand beyond the initial local patch.
@@ -113,12 +121,10 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Research Notes
 
-- Active experiment: `EXP-003 — Local RRT Under Partial Observability`
-- Current status: in progress — initial agent integrated; Play-mode validation pending
-- Current focus:
-  - validate LocalRrt on seed 42;
-  - MetricsLogger (CSV) — EXP-001 Days 8–9;
-  - batch comparison vs WallFollower.
+- Experiment: `EXP-SWARM-001 — 3D Boids Baseline`
+- Metrics impacted: planned swarm-flight metrics include `agent_count`, `mean_speed`, `mean_neighbor_distance`, `cohesion_index`, `separation_violations`, `boundary_hits`, and `coverage_volume_percent`.
+- Scientific reason: flying swarm agents better support the project’s artificial-life goal than RRT-centered path planning because they foreground local rules, emergent swarm motion, foraging, environmental memory, hive-like coordination, and social behavior.
+- Risks / limitations: no implementation was added in this phase; swarm visuals must be validated with metrics before claiming collective intelligence.
 - Metrics impacted: EXP-005 CSV includes `frontier_claims_created`, `claim_conflicts`, and `claimed_frontier_steps` in addition to signal metrics.
 - Scientific reason: test whether dynamic responsibility claims reduce duplicate exploration compared with no-communication, random signals, trails, and frontier hints.
 - Risks / limitations:

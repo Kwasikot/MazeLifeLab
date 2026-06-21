@@ -45,45 +45,43 @@ The project should be developed as a **reproducible research platform**, not onl
 
 ## 🔬 Current Active Research Track
 
-The current active implementation focus is:
+The current active direction is:
 
 ```text
-EXP-001 — Single-Agent Navigation Benchmark
+EXP-SWARM-001 — 3D Boids Baseline
 ```
 
-The purpose of EXP-001 is to establish a stable experimental foundation before adding advanced AI features.
+MazeLifeLab is pivoting away from RRT-centered maze path planning as the main research direction.
 
 Current focus:
 
-- deterministic maze generation with seeds;
-- start and goal positions;
-- single-agent episode loop;
-- RandomWalk baseline;
-- WallFollower baseline;
-- metrics logging;
-- CSV output;
-- reproducible experiment runs.
+- many small flying artificial life agents;
+- simple local interaction rules;
+- visible emergent swarm behavior;
+- measurable baseline metrics;
+- a foundation for foraging, scent fields, hive-like coordination, threats, and role differentiation.
 
-Out of scope for the current stage:
+RRT, Local RRT, and Swarm-RRT are now historical / archived research work. They remain useful as references or possible future baselines, but they are no longer the active center of the project.
+
+Out of scope for the current phase:
 
 - ML-Agents training;
 - neural networks;
-- multi-agent coordination;
-- sound/light communication;
-- pheromone systems;
+- pheromone fields;
+- hive foraging;
+- threat / predator systems;
+- role differentiation;
 - emergent language;
-- Swarm-RRT.
+- new RRT implementation work.
 
-These are important future directions, but they should not be implemented before the basic benchmark is reproducible and measurable.
+These are important future directions, but they should not be implemented before `EXP-SWARM-001` establishes a simple measurable flying-swarm baseline.
 
 Key documents:
 
+- [`docs/swarm_flight_research_agenda.md`](docs/swarm_flight_research_agenda.md) — active swarm-flight research agenda.
 - [`docs/research_agenda.md`](docs/research_agenda.md) — long-term research direction.
-- [`docs/experiment_001_single_agent.md`](docs/experiment_001_single_agent.md) — current experiment protocol.
-- [`docs/schedule_exp_001.md`](docs/schedule_exp_001.md) — practical implementation schedule.
 - [`docs/project_memory.md`](docs/project_memory.md) — compact current project context.
 - [`docs/hardware_and_algorithm_tiers.md`](docs/hardware_and_algorithm_tiers.md) — hardware profiles and algorithm scaling tiers.
-- [`docs/experiment_002_rrt_vs_baselines.md`](docs/experiment_002_rrt_vs_baselines.md) — future RRT comparison protocol.
 - [`docs/theory_of_mind_late_stage.md`](docs/theory_of_mind_late_stage.md) — late-stage Theory of Mind / social cognition roadmap.
 - [`docs/intelligence_as_dynamic_stability.md`](docs/intelligence_as_dynamic_stability.md) — long-term intelligence-as-dynamic-stability research framing.
 - [`docs/decision_log.md`](docs/decision_log.md) — why major decisions were made.
@@ -93,27 +91,29 @@ Key documents:
 
 ## 🧭 Research Direction
 
-The long-term research ladder is:
+The new swarm-flight research ladder is:
 
 ```text
-EXP-001 — Single-Agent Navigation Benchmark
+EXP-SWARM-001 — 3D Boids Baseline
     ↓
-EXP-002 — RRT vs Baselines
+EXP-SWARM-002 — Obstacle Avoidance Field
     ↓
-EXP-003 — Local RRT Under Partial Observability
+EXP-SWARM-003 — Fruit-Fly Search / Random Exploration
     ↓
-EXP-004 — Multi-Agent Exploration Without Communication
+EXP-SWARM-004 — Bee-Hive Foraging
     ↓
-EXP-005 — Multi-Agent Exploration With Simple Signals
+EXP-SWARM-005 — Scent / Pheromone Field
     ↓
-EXP-006 — Swarm-RRT / Distributed Search Trees
+EXP-SWARM-006 — Threat / Predator Response
+    ↓
+EXP-SWARM-007 — Role Differentiation
 ```
 
-The most original long-term idea is **Swarm-RRT**:
+The initial algorithm proposal is **Scented Active Boids**:
 
-> Can a population of locally perceiving agents collectively approximate a search tree through movement, communication, and environmental memory?
+> Can a population of simple flying agents produce useful collective search through separation, alignment, cohesion, random wander, boundary avoidance, and later scent, home attraction, memory, and threat response?
 
-This connects the project to artificial life, swarm robotics, embodied cognition, distributed planning, and collective intelligence.
+This connects the project to artificial life, swarm robotics, embodied cognition, active matter, foraging swarms, and collective intelligence.
 
 A later research direction may study operational Theory of Mind-like mechanisms, such as other-agent state estimation and knowledge-state estimation, only after multi-agent baselines, communication metrics, and environmental or group memory are established. See [`docs/theory_of_mind_late_stage.md`](docs/theory_of_mind_late_stage.md).
 

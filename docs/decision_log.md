@@ -37,6 +37,58 @@ What could go wrong?
 
 ---
 
+## 2026-06-21 — Pivot from RRT-centered navigation to swarm-flight artificial life
+
+### Context
+
+MazeLifeLab has explored deterministic maze navigation, Local RRT, multi-agent stigmergy, and Swarm-RRT. These experiments clarified useful infrastructure for agents, metrics, visualization, and environmental signals, but the RRT-centered framing increasingly makes the project about path planning rather than artificial life.
+
+The deeper project goal is emergent behavior, collective search, swarm/social intelligence, environmental memory, and biologically inspired coordination.
+
+### Decision
+
+Pivot the active research direction from RRT-centered navigation to swarm-based flying artificial life.
+
+The new active experiment is:
+
+```text
+EXP-SWARM-001 — 3D Boids Baseline
+```
+
+RRT, Local RRT, and Swarm-RRT are now historical / archived research work unless explicitly revived as comparison baselines or analysis tools.
+
+### Reasoning
+
+RRT is useful as a path planner, but it does not naturally express the deeper goal of artificial life, emergent behavior, collective search, and swarm/social intelligence.
+
+Flying swarm agents provide a better foundation for later communication, hive behavior, environmental memory, foraging, scent fields, threat response, role differentiation, and social cognition. A Boids / active-matter baseline also gives the project a simpler and more biologically meaningful first layer: many agents, local rules, visible emergent motion, and measurable group behavior.
+
+### Alternatives Considered
+
+- Continue improving Swarm-RRT as the primary research direction.
+- Keep the maze-navigation ladder active and add swarm-flight later.
+- Treat flying swarms as only a visual side experiment.
+- Pivot now while preserving RRT work as historical baseline material.
+
+The selected option is to pivot now and document the new swarm-flight agenda before implementation.
+
+### Risks / Limitations
+
+- Existing RRT work may become underused unless archived clearly.
+- Swarm visuals can look compelling without proving meaningful collective behavior.
+- Metrics for 3D swarm behavior must be defined before adding advanced features.
+- The project must avoid jumping directly to pheromones, predators, roles, or learning before `EXP-SWARM-001` is measurable.
+
+### Related Files
+
+- `docs/swarm_flight_research_agenda.md`
+- `docs/project_memory.md`
+- `README.md`
+- `CHANGELOG.md`
+- `docs/decision_log.md`
+
+---
+
 ## 2026-06-06 — Frame intelligence as dynamic stability for future stages
 
 ### Context

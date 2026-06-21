@@ -13,46 +13,49 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-006
+EXP-SWARM-001
 ```
 
 Name:
 
 ```text
-Swarm-RRT / Distributed Search Trees
+3D Boids Baseline
 ```
 
 Status:
 
 ```text
-IN PROGRESS — SwarmRrtField, SwarmRrtPlanner, Experiment006Runner
+PLANNED — documentation pivot complete; implementation not started
 ```
 
 Primary document:
 
 ```text
-docs/experiment_006_swarm_rrt.md
+docs/swarm_flight_research_agenda.md
 ```
 
-Previous experiments (shared infrastructure):
+Historical / archived experiments:
 
 ```text
+EXP-006 — Swarm-RRT / Distributed Search Trees
 EXP-005 — Multi-Agent Exploration With Simple Signals
 EXP-004 — Multi-Agent Exploration Without Communication
-EXP-001 — Single-Agent Navigation Benchmark
 EXP-003 — Local RRT Under Partial Observability
+EXP-001 — Single-Agent Navigation Benchmark
 ```
 
 ---
 
 # Current Goal
 
-Test whether agents can collectively approximate a distributed RRT by sharing tree edges through environmental memory:
+Build the first swarm-flight artificial life baseline:
 
-- `SwarmRrtField` stores deposited RRT branch edges per episode;
-- `SwarmRrt` mode grafts foreign tree nodes reachable in each agent's discovered map;
-- ablation: `Independent` (EXP-004) vs `DepositOnly` vs `SwarmRrt`;
-- team metrics plus `swarm_edges_deposited` and `swarm_graft_nodes`.
+- many small flying agents;
+- simple local rules;
+- visible emergent swarm behavior;
+- measurable baseline metrics.
+
+The initial algorithm proposal is `Scented Active Boids`, beginning with separation, alignment, cohesion, random wander, and boundary avoidance.
 
 ---
 
@@ -114,7 +117,7 @@ LocalRrtAgent.ConfigureSwarmRrt (optional deposit + graft)
 
 # Current Baselines
 
-Implemented:
+Implemented historical navigation baselines:
 
 ```text
 RandomWalkAgent
@@ -126,24 +129,27 @@ ManualAgentController (testing only)
 Planned:
 
 ```text
-RRT_Global (EXP-002)
-Batch runner across seeds (EXP-001 Days 10–11)
-EXP-005 multi-agent with simple signals
-EXP-006 Swarm-RRT / distributed search trees (active)
+EXP-SWARM-001 — 3D Boids Baseline
+Independent random flying agents
+Boids ablations with one steering force removed
 ```
 
 Future:
 
 ```text
-A*
-RL Agent
+EXP-SWARM-002 — Obstacle Avoidance Field
+EXP-SWARM-003 — Fruit-Fly Search / Random Exploration
+EXP-SWARM-004 — Bee-Hive Foraging
+EXP-SWARM-005 — Scent / Pheromone Field
+EXP-SWARM-006 — Threat / Predator Response
+EXP-SWARM-007 — Role Differentiation
 ```
 
 ---
 
 # Required Metrics
 
-Minimum metrics:
+Minimum historical navigation metrics:
 
 ```text
 episode_id
@@ -157,6 +163,21 @@ coverage_percent
 termination_reason
 ```
 
+Minimum planned swarm-flight metrics:
+
+```text
+episode_id
+seed
+agent_count
+mean_speed
+mean_neighbor_distance
+cohesion_index
+separation_violations
+boundary_hits
+coverage_volume_percent
+termination_reason
+```
+
 ---
 
 # Current Assumptions
@@ -164,22 +185,23 @@ termination_reason
 1. Reproducibility is more important than complexity.
 2. Baselines must exist before ML agents.
 3. Metrics must exist before advanced behaviour.
-4. Single-agent experiments come before multi-agent experiments.
-5. Communication comes after baseline navigation is validated.
+4. Swarm-flight baselines should start with simple local rules before communication, pheromones, predators, roles, or learning.
+5. RRT is historical / archived work unless explicitly revived as a comparison baseline.
 
 ---
 
-# Out of Scope For EXP-001
+# Out of Scope For EXP-SWARM-001
 
 Do not implement yet:
 
 - ML-Agents training
 - emergent communication
 - pheromone systems
-- swarm intelligence
-- multi-agent coordination
+- hive foraging
+- predator / threat systems
 - hierarchical agents
 - language systems
+- role differentiation
 
 These belong to future experiments.
 
@@ -190,36 +212,43 @@ These belong to future experiments.
 MazeLifeLab should evolve toward:
 
 ```text
-Navigation
--> Exploration
--> Communication
--> Collective Memory
--> Swarm Intelligence
--> Distributed Planning
--> Artificial Life
+Flying agents
+-> Local interaction rules
+-> Swarm motion
+-> Obstacle avoidance
+-> Foraging
+-> Scent / pheromone fields
+-> Hive-like coordination
+-> Role differentiation
+-> Artificial life
 ```
 
 The strongest long-term research theme is:
 
 ```text
-Collective exploration under partial observability using simple local communication.
+Swarm-based flying artificial life using simple local rules, environmental cues, and measurable collective behavior.
 ```
 
 ---
 
 # Open Questions
 
-1. What is the best deterministic maze generation strategy?
-2. How should coverage be measured?
-3. How should wall-following be implemented?
-4. Should RRT use full map access or local sensing?
-5. Which metrics best capture exploration quality?
+1. What minimal 3D world is enough to show stable swarm motion?
+2. Which Boids metrics best distinguish useful swarm behavior from visual noise?
+3. How should coverage volume be measured in a bounded flying arena?
+4. What population size is stable on the current hardware?
+5. Which steering-force ablations should define the first baseline?
 
 ---
 
 # Next Recommended Task
 
-Verify EXP-005 in Play mode (`communication_mode=FrontierClaim`), then compare CSV against EXP-004 and EXP-005 `Trail` / `FrontierHint` on seed 42.
+Implement `EXP-SWARM-001 — 3D Boids Baseline` after this documentation phase:
+
+- create many small flying agents;
+- implement separation, alignment, cohesion, random wander, and boundary avoidance;
+- add visible swarm motion;
+- log baseline metrics.
 
 ---
 
