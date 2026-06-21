@@ -10,6 +10,9 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added late-stage social language and Theory-of-Mind swarm research documentation:
+  - `docs/swarm_social_language_tom_plan.md`
+  - `docs/swarm_social_language_tom_science_advisor_critique.md`
 - Added `EXP-SWARM-003 - Fruit-Fly Search / Random Exploration` implementation:
   - `Assets/Scripts/Experiments/ExperimentSwarm003Runner.cs`
   - `Assets/Scripts/Experiments/ExperimentSwarm003MetricsLogger.cs`
@@ -95,6 +98,7 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Changed
 
+- Extended `docs/swarm_flight_research_agenda.md` with a late-stage social language and operational Theory-of-Mind direction, while explicitly keeping language, LLMs, and cognition-like mechanisms out of the current simple swarm stages.
 - Changed `MazeWallVisualizer` to render raised 3D wall boxes instead of flat red line strips, making swarm-flight maze structure visible.
 - Pivoted the active research direction from RRT-centered maze path planning to swarm-based flying artificial life agents.
 - Started `EXP-SWARM-003` implementation with fruit-fly-style noisy exploration and coverage-memory metrics.
@@ -159,12 +163,13 @@ This project follows a research-oriented changelog discipline: changes should be
 - Experiment: `EXP-SWARM-003 — Fruit-Fly Search / Random Exploration`
 - Metrics impacted: adds `new_voxels_discovered`, `revisit_ratio`, `mean_visit_count`, `exploration_efficiency`, and `frontier_bias_steps`.
 - Scientific reason: introduces the first explicit exploration pressure by biasing agents toward low-visited arena voxels while preserving noisy local search.
-- Risks / limitations: coverage seeking is hand-designed novelty bias, not learned behavior and not yet foraging, scent, hive, predators, or roles.
+- Risks / limitations: coverage seeking is hand-designed novelty bias, not learned behavior and not yet foraging, scent, hive, predators, roles, language, LLMs, or Theory-of-Mind-like mechanisms.
 - Metrics impacted: EXP-005 CSV includes `frontier_claims_created`, `claim_conflicts`, and `claimed_frontier_steps` in addition to signal metrics.
 - Scientific reason: test whether dynamic responsibility claims reduce duplicate exploration compared with no-communication, random signals, trails, and frontier hints.
 - Risks / limitations:
   - wall-following may loop on non-simply-connected mazes (documented in EXP-001 spec);
-  - `FrontierClaim` is hand-designed communication semantics and must be ablated against simpler signal modes before treating it as evidence of emergent coordination.
+  - `FrontierClaim` is hand-designed communication semantics and must be ablated against simpler signal modes before treating it as evidence of emergent coordination;
+  - late-stage social-language / ToM-like mechanisms are documented as future research only and should not be implemented before simple swarm baselines are reproducible.
 
 ---
 
