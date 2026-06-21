@@ -163,7 +163,7 @@ These should be framed as simple social heuristics, not as human-like cognition.
 
 ## 11. Experiment Sequence
 
-### EXP-SWARM-001 â€” 3D Boids Baseline
+### EXP-SWARM-001 - 3D Boids Baseline
 
 Purpose:
 
@@ -176,7 +176,7 @@ Baseline comparison:
 - independent random flying agents;
 - Boids with one steering force removed.
 
-### EXP-SWARM-002 â€” Obstacle Avoidance Field
+### EXP-SWARM-002 - Obstacle Avoidance Field
 
 Purpose:
 
@@ -184,7 +184,7 @@ Purpose:
 - test whether the swarm can flow around simple 3D obstacles;
 - measure collision rate, fragmentation, and traversal coverage.
 
-### EXP-SWARM-003 â€” Fruit-Fly Search / Random Exploration
+### EXP-SWARM-003 - Fruit-Fly Search / Random Exploration
 
 Purpose:
 
@@ -192,7 +192,7 @@ Purpose:
 - tune random walk, turn noise, persistence, and local cue response;
 - compare search coverage against basic Boids.
 
-### EXP-SWARM-004 â€” Bee-Hive Foraging
+### EXP-SWARM-004 - Bee-Hive Foraging
 
 Purpose:
 
@@ -200,7 +200,7 @@ Purpose:
 - measure resource discovery, return success, and collection rate;
 - compare independent foragers against socially influenced foragers.
 
-### EXP-SWARM-005 â€” Scent / Pheromone Field
+### EXP-SWARM-005 - Scent / Pheromone Field
 
 Purpose:
 
@@ -208,7 +208,7 @@ Purpose:
 - test whether decaying cues improve foraging and collective search;
 - measure signal usage, trail formation, redundancy, and resource return.
 
-### EXP-SWARM-006 â€” Threat / Predator Response
+### EXP-SWARM-006 - Threat / Predator Response
 
 Purpose:
 
@@ -216,7 +216,7 @@ Purpose:
 - measure avoidance, regrouping, swarm splitting, and survival;
 - test whether local threat signals improve collective robustness.
 
-### EXP-SWARM-007 â€” Role Differentiation
+### EXP-SWARM-007 - Role Differentiation
 
 Purpose:
 

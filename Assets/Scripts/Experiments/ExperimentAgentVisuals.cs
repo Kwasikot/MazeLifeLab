@@ -32,7 +32,13 @@ public static class ExperimentAgentVisuals
         if (renderer == null)
             return;
 
-        var material = new Material(Shader.Find("Unlit/Color"));
+        Shader shader = Shader.Find("Unlit/Color");
+        if (shader == null)
+            shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null)
+            shader = Shader.Find("Standard");
+
+        var material = new Material(shader);
         material.color = color;
         renderer.sharedMaterial = material;
         renderer.shadowCastingMode = ShadowCastingMode.Off;

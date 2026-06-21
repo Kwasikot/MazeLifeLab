@@ -25,7 +25,7 @@ Name:
 Status:
 
 ```text
-PLANNED — documentation pivot complete; implementation not started
+IN PROGRESS - first Boids baseline code added; Play-mode validation pending
 ```
 
 Primary document:
@@ -56,6 +56,28 @@ Build the first swarm-flight artificial life baseline:
 - measurable baseline metrics.
 
 The initial algorithm proposal is `Scented Active Boids`, beginning with separation, alignment, cohesion, random wander, and boundary avoidance.
+
+---
+
+# Implemented For EXP-SWARM-001
+
+```text
+SwarmFlightAgent (3D flying body with local Boids steering)
+ExperimentSwarm001Runner (episode loop, deterministic spawn, maze-footprint flight arena, arena gizmo, runtime agent creation)
+ExperimentSwarm001MetricsLogger (CSV metrics for baseline swarm motion)
+ExperimentRunnerExclusivity support for the active swarm-flight runner
+Lightweight visible-wall repulsion keeps flyers inside maze corridors before full obstacle-field experiments
+```
+
+# Pending Validation For EXP-SWARM-001
+
+```text
+Attach or enable ExperimentSwarm001Runner in a Unity scene
+Run Play mode on seed 42
+Confirm visible swarm motion without collapse or freezing
+Inspect CSV output at results/experiment_swarm_001_boids.csv
+Tune steering weights and population size after visual/metric review
+```
 
 ---
 
@@ -129,7 +151,6 @@ ManualAgentController (testing only)
 Planned:
 
 ```text
-EXP-SWARM-001 — 3D Boids Baseline
 Independent random flying agents
 Boids ablations with one steering force removed
 ```
@@ -243,12 +264,13 @@ Swarm-based flying artificial life using simple local rules, environmental cues,
 
 # Next Recommended Task
 
-Implement `EXP-SWARM-001 — 3D Boids Baseline` after this documentation phase:
+Validate `EXP-SWARM-001 - 3D Boids Baseline` in Unity Play mode:
 
-- create many small flying agents;
-- implement separation, alignment, cohesion, random wander, and boundary avoidance;
-- add visible swarm motion;
-- log baseline metrics.
+- add or enable `ExperimentSwarm001Runner` on a scene object;
+- run seed 42 with the default 24 agents;
+- inspect visible swarm motion and arena boundary behavior;
+- confirm CSV metrics are written;
+- then tune steering weights or add ablation modes.
 
 ---
 
