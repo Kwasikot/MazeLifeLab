@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Ensures only one experiment runner drives agents on MazeSystem at a time.
-/// When several are enabled, the current swarm-flight runner wins, then legacy maze experiments.
+/// When several are enabled, the newest swarm-flight runner wins, then legacy maze experiments.
 /// </summary>
 public static class ExperimentRunnerExclusivity
 {
@@ -33,6 +33,8 @@ public static class ExperimentRunnerExclusivity
             return runner005.ConfiguredAgentCount;
         if (runner is Experiment006Runner runner006)
             return runner006.ConfiguredAgentCount;
+        if (runner is ExperimentSwarm002Runner swarm002)
+            return swarm002.ConfiguredAgentCount;
         if (runner is ExperimentSwarm001Runner swarm001)
             return swarm001.ConfiguredAgentCount;
         if (runner is Experiment004Runner runner004)
@@ -52,10 +54,15 @@ public static class ExperimentRunnerExclusivity
         DisableIfNot<Experiment005Runner>(host, activeRunner);
         DisableIfNot<Experiment006Runner>(host, activeRunner);
         DisableIfNot<ExperimentSwarm001Runner>(host, activeRunner);
+        DisableIfNot<ExperimentSwarm002Runner>(host, activeRunner);
     }
 
     static MonoBehaviour ResolveWinningRunner(GameObject host)
     {
+        var swarm002 = host.GetComponent<ExperimentSwarm002Runner>();
+        if (swarm002 != null && swarm002.enabled)
+            return swarm002;
+
         var swarm001 = host.GetComponent<ExperimentSwarm001Runner>();
         if (swarm001 != null && swarm001.enabled)
             return swarm001;

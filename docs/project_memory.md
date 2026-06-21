@@ -13,19 +13,19 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-SWARM-001
+EXP-SWARM-002
 ```
 
 Name:
 
 ```text
-3D Boids Baseline
+Obstacle Avoidance Field
 ```
 
 Status:
 
 ```text
-IN PROGRESS - first Boids baseline code added; Play-mode validation pending
+IN PROGRESS - obstacle-field runner added; Play-mode validation pending
 ```
 
 Primary document:
@@ -48,12 +48,15 @@ EXP-001 — Single-Agent Navigation Benchmark
 
 # Current Goal
 
-Build the first swarm-flight artificial life baseline:
+Build the first obstacle-field swarm-flight experiment:
 
 - many small flying agents;
 - simple local rules;
 - visible emergent swarm behavior;
 - measurable baseline metrics.
+- deterministic obstacle markers inside the maze footprint;
+- local obstacle repulsion without physics raycasts;
+- obstacle contacts, near-obstacle exposure, distance, and fragmentation metrics.
 
 The initial algorithm proposal is `Scented Active Boids`, beginning with separation, alignment, cohesion, random wander, and boundary avoidance.
 
@@ -77,6 +80,27 @@ Run Play mode on seed 42
 Confirm visible swarm motion without collapse or freezing
 Inspect CSV output at results/experiment_swarm_001_boids.csv
 Tune steering weights and population size after visual/metric review
+```
+
+---
+
+# Implemented For EXP-SWARM-002
+
+```text
+ExperimentSwarm002Runner (maze-footprint obstacle field, deterministic wall-anchored obstacle slabs spanning multiple wall cells, visible obstacle markers)
+ExperimentSwarm002MetricsLogger (CSV metrics for obstacle avoidance)
+SwarmFlightAgent obstacle repulsion steering via local obstacle list, no physics raycasts
+ExperimentRunnerExclusivity support for EXP-SWARM-002 over EXP-SWARM-001
+```
+
+# Pending Validation For EXP-SWARM-002
+
+```text
+Attach or enable ExperimentSwarm002Runner in a Unity scene
+Run Play mode on seed 42 with default 24 agents and 16 wall-anchored obstacles
+Confirm visible obstacle slabs sit on maze wall segments and swarm flow around them
+Inspect CSV output at results/experiment_swarm_002_obstacles.csv
+Tune obstacle density, radius, and avoidance weight after visual/metric review
 ```
 
 ---
@@ -264,13 +288,13 @@ Swarm-based flying artificial life using simple local rules, environmental cues,
 
 # Next Recommended Task
 
-Validate `EXP-SWARM-001 - 3D Boids Baseline` in Unity Play mode:
+Validate `EXP-SWARM-002 - Obstacle Avoidance Field` in Unity Play mode:
 
-- add or enable `ExperimentSwarm001Runner` on a scene object;
-- run seed 42 with the default 24 agents;
-- inspect visible swarm motion and arena boundary behavior;
+- add or enable `ExperimentSwarm002Runner` on a scene object;
+- run seed 42 with the default 24 agents and 16 wall-anchored obstacles;
+- inspect visible swarm motion around obstacle slabs sitting on maze walls;
 - confirm CSV metrics are written;
-- then tune steering weights or add ablation modes.
+- then tune obstacle radius, avoidance distance, and avoidance weight.
 
 ---
 

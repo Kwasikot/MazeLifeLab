@@ -10,6 +10,12 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added `EXP-SWARM-002 - Obstacle Avoidance Field` implementation:
+  - `Assets/Scripts/Experiments/ExperimentSwarm002Runner.cs`
+  - `Assets/Scripts/Experiments/ExperimentSwarm002MetricsLogger.cs`
+  - deterministic visible obstacle slabs anchored to maze wall segments, with configurable thickness and multi-cell span;
+  - local obstacle repulsion in `SwarmFlightAgent` using obstacle lists instead of physics raycasts;
+  - CSV output: `results/experiment_swarm_002_obstacles.csv`.
 - Added first `EXP-SWARM-001 - 3D Boids Baseline` implementation:
   - `Assets/Scripts/Agents/SwarmFlightAgent.cs`
   - `Assets/Scripts/Experiments/ExperimentSwarm001Runner.cs`
@@ -83,7 +89,9 @@ This project follows a research-oriented changelog discipline: changes should be
 ### Changed
 
 - Pivoted the active research direction from RRT-centered maze path planning to swarm-based flying artificial life agents.
+- Started `EXP-SWARM-002` implementation with a maze-footprint obstacle field, visible obstacle markers, and obstacle-specific metrics.
 - Started `EXP-SWARM-001` implementation with a self-contained flying swarm runner and baseline metrics.
+- Changed active experiment in project memory to `EXP-SWARM-002 — Obstacle Avoidance Field`.
 - Changed `EXP-SWARM-001` defaults so the swarm flies inside the current maze footprint instead of an unrelated free-space arena.
 - Changed active experiment in project memory to `EXP-SWARM-001 — 3D Boids Baseline`.
 - Marked RRT, Local RRT, and Swarm-RRT as historical / archived research work unless explicitly revived as comparison baselines.
@@ -134,6 +142,10 @@ This project follows a research-oriented changelog discipline: changes should be
 - Metrics impacted: `agent_count`, `steps`, `mean_speed`, `mean_neighbor_distance`, `cohesion_index`, `separation_violations`, `boundary_hits`, `coverage_volume_percent`, and `termination_reason`.
 - Scientific reason: flying swarm agents better support the project’s artificial-life goal than RRT-centered path planning because they foreground local rules, emergent swarm motion, foraging, environmental memory, hive-like coordination, and social behavior.
 - Risks / limitations: first implementation is only a Boids baseline; it does not include food, hive behavior, pheromones, predators, roles, learning, or communication.
+- Experiment: `EXP-SWARM-002 — Obstacle Avoidance Field`
+- Metrics impacted: adds `obstacle_count`, `obstacle_contacts`, `near_obstacle_steps`, `mean_obstacle_distance`, and `fragmentation_index`.
+- Scientific reason: tests whether local obstacle repulsion lets flying swarms move through clutter without central planning.
+- Risks / limitations: obstacle markers are deterministic and hand-placed by the runner; this is not yet food search, scent following, predator response, or role differentiation.
 - Metrics impacted: EXP-005 CSV includes `frontier_claims_created`, `claim_conflicts`, and `claimed_frontier_steps` in addition to signal metrics.
 - Scientific reason: test whether dynamic responsibility claims reduce duplicate exploration compared with no-communication, random signals, trails, and frontier hints.
 - Risks / limitations:

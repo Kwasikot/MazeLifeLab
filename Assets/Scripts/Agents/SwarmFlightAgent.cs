@@ -5,6 +5,7 @@ public struct SwarmFlightSettings
 {
     public Vector3 ArenaCenter;
     public Vector3 ArenaSize;
+    public IReadOnlyList<SwarmFlightObstacle> Obstacles;
     public float NeighborRadius;
     public float SeparationRadius;
     public float MaxSpeed;
@@ -18,6 +19,34 @@ public struct SwarmFlightSettings
     public MazeGenerator Maze;
     public float MazeWallAvoidanceDistance;
     public float MazeWallAvoidanceWeight;
+    public float ObstacleAvoidanceDistance;
+    public float ObstacleAvoidanceWeight;
+}
+
+public struct SwarmFlightObstacle
+{
+    public Vector3 Center;
+    public float Radius;
+    public float Height;
+    public Vector2 HalfExtentsXZ;
+
+    public SwarmFlightObstacle(Vector3 center, float radius, float height)
+    {
+        Center = center;
+        Radius = radius;
+        Height = height;
+        HalfExtentsXZ = new Vector2(radius, radius);
+    }
+
+    public SwarmFlightObstacle(Vector3 center, Vector2 halfExtentsXZ, float height)
+    {
+        Center = center;
+        HalfExtentsXZ = new Vector2(
+            Mathf.Max(0.1f, halfExtentsXZ.x),
+            Mathf.Max(0.1f, halfExtentsXZ.y));
+        Radius = Mathf.Max(HalfExtentsXZ.x, HalfExtentsXZ.y);
+        Height = height;
+    }
 }
 
 public class SwarmFlightAgent : MonoBehaviour
@@ -58,7 +87,8 @@ public class SwarmFlightAgent : MonoBehaviour
             ComputeCohesion(agents, settings) * settings.CohesionWeight +
             RandomUnitVector(rng) * settings.WanderWeight +
             ComputeBoundaryAvoidance(settings) * settings.BoundaryWeight +
-            ComputeMazeWallAvoidance(settings) * settings.MazeWallAvoidanceWeight;
+            ComputeMazeWallAvoidance(settings) * settings.MazeWallAvoidanceWeight +
+            ComputeObstacleAvoidance(settings) * settings.ObstacleAvoidanceWeight;
 
         steering = Vector3.ClampMagnitude(steering, settings.MaxForce);
         _velocity = Vector3.ClampMagnitude(_velocity + steering * deltaTime, settings.MaxSpeed);
@@ -201,6 +231,66 @@ public class SwarmFlightAgent : MonoBehaviour
 
         float strength = 1f - Mathf.Clamp01(distanceToWall / Mathf.Max(0.001f, margin));
         force += awayFromWall * strength;
+    }
+
+    Vector3 ComputeObstacleAvoidance(SwarmFlightSettings settings)
+    {
+        if (settings.Obstacles == null || settings.ObstacleAvoidanceDistance <= 0f)
+            return Vector3.zero;
+
+        Vector3 force = Vector3.zero;
+        Vector3 position = transform.position;
+
+        for (int i = 0; i < settings.Obstacles.Count; i++)
+        {
+            SwarmFlightObstacle obstacle = settings.Obstacles[i];
+            float halfHeight = Mathf.Max(0.1f, obstacle.Height * 0.5f);
+            float verticalDistance = Mathf.Abs(position.y - obstacle.Center.y);
+            if (verticalDistance > halfHeight + settings.ObstacleAvoidanceDistance)
+                continue;
+
+            Vector3 away = ObstacleAvoidanceDirection(position, obstacle, out float surfaceDistance);
+            if (surfaceDistance > settings.ObstacleAvoidanceDistance)
+                continue;
+
+            float horizontalStrength = 1f - Mathf.Clamp01(surfaceDistance / settings.ObstacleAvoidanceDistance);
+            float verticalStrength = 1f - Mathf.Clamp01(Mathf.Max(0f, verticalDistance - halfHeight) / settings.ObstacleAvoidanceDistance);
+            force += away * horizontalStrength * verticalStrength;
+        }
+
+        return force;
+    }
+
+    static Vector3 ObstacleAvoidanceDirection(
+        Vector3 position,
+        SwarmFlightObstacle obstacle,
+        out float surfaceDistance)
+    {
+        Vector3 offset = position - obstacle.Center;
+        float absX = Mathf.Abs(offset.x);
+        float absZ = Mathf.Abs(offset.z);
+        float outsideX = Mathf.Max(absX - obstacle.HalfExtentsXZ.x, 0f);
+        float outsideZ = Mathf.Max(absZ - obstacle.HalfExtentsXZ.y, 0f);
+
+        if (outsideX > 0f || outsideZ > 0f)
+        {
+            Vector3 closest = new Vector3(
+                obstacle.Center.x + Mathf.Clamp(offset.x, -obstacle.HalfExtentsXZ.x, obstacle.HalfExtentsXZ.x),
+                position.y,
+                obstacle.Center.z + Mathf.Clamp(offset.z, -obstacle.HalfExtentsXZ.y, obstacle.HalfExtentsXZ.y));
+            Vector3 away = position - closest;
+            away.y = 0f;
+            surfaceDistance = Mathf.Sqrt(outsideX * outsideX + outsideZ * outsideZ);
+            return away.sqrMagnitude > 0.001f ? away.normalized : Vector3.forward;
+        }
+
+        float penetrationX = obstacle.HalfExtentsXZ.x - absX;
+        float penetrationZ = obstacle.HalfExtentsXZ.y - absZ;
+        surfaceDistance = 0f;
+        if (penetrationX < penetrationZ)
+            return new Vector3(Mathf.Sign(offset.x == 0f ? 1f : offset.x), 0f, 0f);
+
+        return new Vector3(0f, 0f, Mathf.Sign(offset.z == 0f ? 1f : offset.z));
     }
 
     static float AxisBoundaryForce(float value, float halfExtent, float margin)

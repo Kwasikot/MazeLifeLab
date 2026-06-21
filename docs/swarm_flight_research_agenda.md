@@ -184,6 +184,12 @@ Purpose:
 - test whether the swarm can flow around simple 3D obstacles;
 - measure collision rate, fragmentation, and traversal coverage.
 
+Initial implementation:
+
+- `ExperimentSwarm002Runner` generates deterministic visible obstacle slabs anchored to existing maze wall segments, with configurable wall thickness and multi-cell span.
+- `SwarmFlightAgent` reads a local obstacle list and applies repulsion without physics raycasts.
+- CSV metrics include `obstacle_contacts`, `near_obstacle_steps`, `mean_obstacle_distance`, and `fragmentation_index`.
+
 ### EXP-SWARM-003 - Fruit-Fly Search / Random Exploration
 
 Purpose:
