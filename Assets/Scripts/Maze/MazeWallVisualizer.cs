@@ -10,8 +10,10 @@ public class MazeWallVisualizer : MonoBehaviour
 {
     const int CellsPerTile = 20;
 
-    [SerializeField] float wallY = 0.05f;
-    [SerializeField] Color wallColor = Color.red;
+    [SerializeField] float wallY = 0f;
+    [SerializeField] float wallHeight = 2.5f;
+    [SerializeField] float wallThickness = 0f;
+    [SerializeField] Color wallColor = Color.green;
 
     readonly Dictionary<long, TileBuilder> _tiles = new Dictionary<long, TileBuilder>();
     readonly List<GameObject> _chunkObjects = new List<GameObject>();
@@ -49,7 +51,13 @@ public class MazeWallVisualizer : MonoBehaviour
         if (_sharedMaterial != null)
             return;
 
-        _sharedMaterial = new Material(Shader.Find("Unlit/Color"));
+        Shader shader = Shader.Find("Unlit/Color");
+        if (shader == null)
+            shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null)
+            shader = Shader.Find("Standard");
+
+        _sharedMaterial = new Material(shader);
         _sharedMaterial.color = wallColor;
     }
 
@@ -62,7 +70,11 @@ public class MazeWallVisualizer : MonoBehaviour
         if (walls == null || walls.Count == 0)
             return;
 
-        float halfWidth = Mathf.Max(0.35f, cellSize * 0.06f) * 0.5f;
+        float resolvedThickness = wallThickness > 0f
+            ? wallThickness
+            : Mathf.Max(0.35f, cellSize * 0.08f);
+        float halfWidth = resolvedThickness * 0.5f;
+        float resolvedHeight = Mathf.Max(0.05f, wallHeight);
         int visibleWalls = 0;
 
         foreach (KeyValuePair<string, MazeWall> entry in walls)
@@ -78,7 +90,14 @@ public class MazeWallVisualizer : MonoBehaviour
             int tileY = FloorDiv(cellY, CellsPerTile);
 
             TileBuilder tile = GetOrCreateTile(tileX, tileY);
-            AddWallQuad(entry.Value.A, entry.Value.B, halfWidth, wallY, tile.Vertices, tile.Triangles);
+            AddWallBox(
+                entry.Value.A,
+                entry.Value.B,
+                halfWidth,
+                wallY,
+                resolvedHeight,
+                tile.Vertices,
+                tile.Triangles);
         }
 
         int totalVertices = 0;
@@ -89,7 +108,8 @@ public class MazeWallVisualizer : MonoBehaviour
 
         Debug.Log(
             $"[MazeWallVisualizer] walls={visibleWalls} vertices={totalVertices} " +
-            $"tiles={_tiles.Count} chunks={_chunkObjects.Count} cellSize={cellSize}");
+            $"tiles={_tiles.Count} chunks={_chunkObjects.Count} cellSize={cellSize} " +
+            $"height={resolvedHeight} thickness={resolvedThickness}");
     }
 
     int BuildTileMeshes(TileBuilder tile)
@@ -169,11 +189,12 @@ public class MazeWallVisualizer : MonoBehaviour
         return ((long)tileX << 32) | (uint)tileY;
     }
 
-    static void AddWallQuad(
+    static void AddWallBox(
         Vector3 a,
         Vector3 b,
         float halfWidth,
         float y,
+        float height,
         List<Vector3> vertices,
         List<int> triangles)
     {
@@ -185,20 +206,38 @@ public class MazeWallVisualizer : MonoBehaviour
         Vector3 dir = delta.normalized;
         Vector3 perp = new Vector3(-dir.z, 0f, dir.x) * halfWidth;
 
-        a.y = y;
-        b.y = y;
+        Vector3 bottomA = a;
+        Vector3 bottomB = b;
+        bottomA.y = y;
+        bottomB.y = y;
+        Vector3 topA = bottomA + Vector3.up * height;
+        Vector3 topB = bottomB + Vector3.up * height;
 
         int start = vertices.Count;
-        vertices.Add(a - perp);
-        vertices.Add(a + perp);
-        vertices.Add(b + perp);
-        vertices.Add(b - perp);
+        vertices.Add(bottomA - perp); // 0
+        vertices.Add(bottomA + perp); // 1
+        vertices.Add(bottomB + perp); // 2
+        vertices.Add(bottomB - perp); // 3
+        vertices.Add(topA - perp);    // 4
+        vertices.Add(topA + perp);    // 5
+        vertices.Add(topB + perp);    // 6
+        vertices.Add(topB - perp);    // 7
 
-        triangles.Add(start);
-        triangles.Add(start + 1);
-        triangles.Add(start + 2);
-        triangles.Add(start);
-        triangles.Add(start + 2);
-        triangles.Add(start + 3);
+        AddQuad(triangles, start + 4, start + 5, start + 6, start + 7); // top
+        AddQuad(triangles, start + 0, start + 3, start + 2, start + 1); // bottom
+        AddQuad(triangles, start + 0, start + 4, start + 7, start + 3); // side -
+        AddQuad(triangles, start + 1, start + 2, start + 6, start + 5); // side +
+        AddQuad(triangles, start + 0, start + 1, start + 5, start + 4); // cap A
+        AddQuad(triangles, start + 3, start + 7, start + 6, start + 2); // cap B
+    }
+
+    static void AddQuad(List<int> triangles, int a, int b, int c, int d)
+    {
+        triangles.Add(a);
+        triangles.Add(b);
+        triangles.Add(c);
+        triangles.Add(a);
+        triangles.Add(c);
+        triangles.Add(d);
     }
 }

@@ -198,6 +198,14 @@ Purpose:
 - tune random walk, turn noise, persistence, and local cue response;
 - compare search coverage against basic Boids.
 
+Initial implementation:
+
+- `ExperimentSwarm003Runner` compares `PlainBoids` against `FruitFlySearch`.
+- The runner owns an XZ coverage grid and tracks visit counts per arena floor cell.
+- `SwarmFlightAgent` can optionally query an exploration field and bias toward lower-visited neighboring voxels.
+- Defaults use a denser low-flying small-sphere swarm and flat Scene-view coverage tiles so exploration is visible during Play mode.
+- CSV metrics include `new_voxels_discovered`, `revisit_ratio`, `mean_visit_count`, `exploration_efficiency`, and `frontier_bias_steps`.
+
 ### EXP-SWARM-004 - Bee-Hive Foraging
 
 Purpose:

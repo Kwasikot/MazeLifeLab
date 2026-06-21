@@ -10,6 +10,13 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added `EXP-SWARM-003 - Fruit-Fly Search / Random Exploration` implementation:
+  - `Assets/Scripts/Experiments/ExperimentSwarm003Runner.cs`
+  - `Assets/Scripts/Experiments/ExperimentSwarm003MetricsLogger.cs`
+  - exploration modes: `PlainBoids` and `FruitFlySearch`;
+  - XZ coverage grid with low-visited-space novelty steering;
+  - dense low-flying small-sphere swarm and flat Scene-view coverage tiles for visible exploration;
+  - CSV output: `results/experiment_swarm_003_exploration.csv`.
 - Added `EXP-SWARM-002 - Obstacle Avoidance Field` implementation:
   - `Assets/Scripts/Experiments/ExperimentSwarm002Runner.cs`
   - `Assets/Scripts/Experiments/ExperimentSwarm002MetricsLogger.cs`
@@ -88,8 +95,11 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Changed
 
+- Changed `MazeWallVisualizer` to render raised 3D wall boxes instead of flat red line strips, making swarm-flight maze structure visible.
 - Pivoted the active research direction from RRT-centered maze path planning to swarm-based flying artificial life agents.
+- Started `EXP-SWARM-003` implementation with fruit-fly-style noisy exploration and coverage-memory metrics.
 - Started `EXP-SWARM-002` implementation with a maze-footprint obstacle field, visible obstacle markers, and obstacle-specific metrics.
+- Changed active experiment in project memory to `EXP-SWARM-003 — Fruit-Fly Search / Random Exploration`.
 - Started `EXP-SWARM-001` implementation with a self-contained flying swarm runner and baseline metrics.
 - Changed active experiment in project memory to `EXP-SWARM-002 — Obstacle Avoidance Field`.
 - Changed `EXP-SWARM-001` defaults so the swarm flies inside the current maze footprint instead of an unrelated free-space arena.
@@ -146,6 +156,10 @@ This project follows a research-oriented changelog discipline: changes should be
 - Metrics impacted: adds `obstacle_count`, `obstacle_contacts`, `near_obstacle_steps`, `mean_obstacle_distance`, and `fragmentation_index`.
 - Scientific reason: tests whether local obstacle repulsion lets flying swarms move through clutter without central planning.
 - Risks / limitations: obstacle markers are deterministic and hand-placed by the runner; this is not yet food search, scent following, predator response, or role differentiation.
+- Experiment: `EXP-SWARM-003 — Fruit-Fly Search / Random Exploration`
+- Metrics impacted: adds `new_voxels_discovered`, `revisit_ratio`, `mean_visit_count`, `exploration_efficiency`, and `frontier_bias_steps`.
+- Scientific reason: introduces the first explicit exploration pressure by biasing agents toward low-visited arena voxels while preserving noisy local search.
+- Risks / limitations: coverage seeking is hand-designed novelty bias, not learned behavior and not yet foraging, scent, hive, predators, or roles.
 - Metrics impacted: EXP-005 CSV includes `frontier_claims_created`, `claim_conflicts`, and `claimed_frontier_steps` in addition to signal metrics.
 - Scientific reason: test whether dynamic responsibility claims reduce duplicate exploration compared with no-communication, random signals, trails, and frontier hints.
 - Risks / limitations:

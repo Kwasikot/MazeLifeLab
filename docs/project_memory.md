@@ -13,19 +13,19 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-SWARM-002
+EXP-SWARM-003
 ```
 
 Name:
 
 ```text
-Obstacle Avoidance Field
+Fruit-Fly Search / Random Exploration
 ```
 
 Status:
 
 ```text
-IN PROGRESS - obstacle-field runner added; Play-mode validation pending
+IN PROGRESS - fruit-fly exploration runner added; Play-mode validation pending
 ```
 
 Primary document:
@@ -48,15 +48,16 @@ EXP-001 — Single-Agent Navigation Benchmark
 
 # Current Goal
 
-Build the first obstacle-field swarm-flight experiment:
+Build the first task-oriented swarm-flight exploration experiment:
 
 - many small flying agents;
 - simple local rules;
 - visible emergent swarm behavior;
 - measurable baseline metrics.
-- deterministic obstacle markers inside the maze footprint;
-- local obstacle repulsion without physics raycasts;
-- obstacle contacts, near-obstacle exposure, distance, and fragmentation metrics.
+- voxel coverage memory across the flight arena;
+- noisy fruit-fly-style novelty seeking;
+- comparison mode: PlainBoids vs FruitFlySearch;
+- coverage, revisit, and exploration-efficiency metrics.
 
 The initial algorithm proposal is `Scented Active Boids`, beginning with separation, alignment, cohesion, random wander, and boundary avoidance.
 
@@ -101,6 +102,30 @@ Run Play mode on seed 42 with default 24 agents and 16 wall-anchored obstacles
 Confirm visible obstacle slabs sit on maze wall segments and swarm flow around them
 Inspect CSV output at results/experiment_swarm_002_obstacles.csv
 Tune obstacle density, radius, and avoidance weight after visual/metric review
+```
+
+---
+
+# Implemented For EXP-SWARM-003
+
+```text
+ExperimentSwarm003Runner (PlainBoids vs FruitFlySearch exploration modes)
+ExperimentSwarm003MetricsLogger (coverage, revisit, and novelty-bias CSV metrics)
+SwarmFlightAgent optional exploration-field steering hook
+XZ coverage memory for low-visited-space bias
+Dense low-flying small-sphere default swarm and flat Scene-view coverage tiles for visible exploration
+ExperimentRunnerExclusivity support for EXP-SWARM-003 over EXP-SWARM-002/001
+MazeWallVisualizer renders raised 3D wall boxes so maze structure is visible to reviewers
+```
+
+# Pending Validation For EXP-SWARM-003
+
+```text
+Attach or enable ExperimentSwarm003Runner in a Unity scene
+Run Play mode on seed 42 with default 96 small low-flying agents
+Compare PlainBoids and FruitFlySearch modes
+Confirm coverage grows and revisit ratio is logged
+Inspect CSV output at results/experiment_swarm_003_exploration.csv
 ```
 
 ---
@@ -288,13 +313,12 @@ Swarm-based flying artificial life using simple local rules, environmental cues,
 
 # Next Recommended Task
 
-Validate `EXP-SWARM-002 - Obstacle Avoidance Field` in Unity Play mode:
+Validate `EXP-SWARM-003 - Fruit-Fly Search / Random Exploration` in Unity Play mode:
 
-- add or enable `ExperimentSwarm002Runner` on a scene object;
-- run seed 42 with the default 24 agents and 16 wall-anchored obstacles;
-- inspect visible swarm motion around obstacle slabs sitting on maze walls;
-- confirm CSV metrics are written;
-- then tune obstacle radius, avoidance distance, and avoidance weight.
+- add or enable `ExperimentSwarm003Runner` on a scene object;
+- run seed 42 in `PlainBoids`, then `FruitFlySearch`;
+- compare coverage volume, revisit ratio, and exploration efficiency;
+- tune exploration weight, probe distance, and wander weight.
 
 ---
 

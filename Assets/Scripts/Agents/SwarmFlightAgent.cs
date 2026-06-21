@@ -6,6 +6,7 @@ public struct SwarmFlightSettings
     public Vector3 ArenaCenter;
     public Vector3 ArenaSize;
     public IReadOnlyList<SwarmFlightObstacle> Obstacles;
+    public ISwarmExplorationField ExplorationField;
     public float NeighborRadius;
     public float SeparationRadius;
     public float MaxSpeed;
@@ -21,6 +22,8 @@ public struct SwarmFlightSettings
     public float MazeWallAvoidanceWeight;
     public float ObstacleAvoidanceDistance;
     public float ObstacleAvoidanceWeight;
+    public float ExplorationProbeDistance;
+    public float ExplorationWeight;
 }
 
 public struct SwarmFlightObstacle
@@ -49,6 +52,15 @@ public struct SwarmFlightObstacle
     }
 }
 
+public interface ISwarmExplorationField
+{
+    bool TrySampleNoveltyDirection(
+        Vector3 position,
+        Vector3 velocity,
+        float probeDistance,
+        out Vector3 direction);
+}
+
 public class SwarmFlightAgent : MonoBehaviour
 {
     Vector3 _velocity;
@@ -57,12 +69,16 @@ public class SwarmFlightAgent : MonoBehaviour
     public int AgentIndex { get; private set; }
     public Vector3 Velocity => _velocity;
     public int BoundaryHits { get; private set; }
+    public bool LastUsedExplorationBias { get; private set; }
+    public int ExplorationBiasSteps { get; private set; }
 
     public void BeginEpisode(int agentIndex, Vector3 initialVelocity)
     {
         AgentIndex = agentIndex;
         _velocity = initialVelocity;
         BoundaryHits = 0;
+        LastUsedExplorationBias = false;
+        ExplorationBiasSteps = 0;
         _enabled = true;
         OrientToVelocity();
     }
@@ -81,6 +97,7 @@ public class SwarmFlightAgent : MonoBehaviour
         if (!_enabled || agents == null || rng == null || deltaTime <= 0f)
             return;
 
+        LastUsedExplorationBias = false;
         Vector3 steering =
             ComputeSeparation(agents, settings) * settings.SeparationWeight +
             ComputeAlignment(agents, settings) * settings.AlignmentWeight +
@@ -88,7 +105,8 @@ public class SwarmFlightAgent : MonoBehaviour
             RandomUnitVector(rng) * settings.WanderWeight +
             ComputeBoundaryAvoidance(settings) * settings.BoundaryWeight +
             ComputeMazeWallAvoidance(settings) * settings.MazeWallAvoidanceWeight +
-            ComputeObstacleAvoidance(settings) * settings.ObstacleAvoidanceWeight;
+            ComputeObstacleAvoidance(settings) * settings.ObstacleAvoidanceWeight +
+            ComputeExplorationBias(settings) * settings.ExplorationWeight;
 
         steering = Vector3.ClampMagnitude(steering, settings.MaxForce);
         _velocity = Vector3.ClampMagnitude(_velocity + steering * deltaTime, settings.MaxSpeed);
@@ -259,6 +277,25 @@ public class SwarmFlightAgent : MonoBehaviour
         }
 
         return force;
+    }
+
+    Vector3 ComputeExplorationBias(SwarmFlightSettings settings)
+    {
+        if (settings.ExplorationField == null || settings.ExplorationWeight <= 0f)
+            return Vector3.zero;
+
+        if (!settings.ExplorationField.TrySampleNoveltyDirection(
+                transform.position,
+                _velocity,
+                settings.ExplorationProbeDistance,
+                out Vector3 direction))
+        {
+            return Vector3.zero;
+        }
+
+        LastUsedExplorationBias = true;
+        ExplorationBiasSteps++;
+        return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.zero;
     }
 
     static Vector3 ObstacleAvoidanceDirection(
