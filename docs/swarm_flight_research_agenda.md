@@ -161,7 +161,48 @@ These should be framed as simple social heuristics, not as human-like cognition.
 
 ---
 
-## 11. Experiment Sequence
+## 11. Late-Stage Social Language and Theory-of-Mind Direction
+
+A much later research direction may add social memory, language-like status reports, LLM-assisted reflection, and operational Theory-of-Mind-like mechanisms.
+
+This direction is documented separately:
+
+- [`docs/swarm_social_language_tom_plan.md`](swarm_social_language_tom_plan.md) — future scientific and implementation plan.
+- [`docs/swarm_social_language_tom_science_advisor_critique.md`](swarm_social_language_tom_science_advisor_critique.md) — skeptical science-advisor critique and guardrails.
+
+The core late-stage question is:
+
+```text
+Can swarm agents improve coordination by remembering social events,
+communicating compressed state in language, and estimating what other agents know?
+```
+
+This must remain late-stage. Do not implement language, LLM reflection, or Theory-of-Mind-like mechanisms until simpler swarm experiments are reproducible and measured.
+
+Safe future terms:
+
+```text
+social memory
+subjective-status report
+agent-local narrative state
+language-mediated coordination
+other-agent state estimation
+knowledge-state estimation
+```
+
+Avoid premature claims:
+
+```text
+real consciousness
+true self-awareness
+sentience
+real Theory of Mind
+human-like inner experience
+```
+
+---
+
+## 12. Experiment Sequence
 
 ### EXP-SWARM-001 - 3D Boids Baseline
 
@@ -238,9 +279,20 @@ Purpose:
 - test scout, forager, carrier, guard, or rest states;
 - measure whether role differentiation improves efficiency over homogeneous agents.
 
+### EXP-SOCIAL-001+ - Late-Stage Social Cognition Experiments
+
+Purpose:
+
+- add social memory streams;
+- test language-like status reporting;
+- optionally connect OpenRouter or local LLM providers behind an abstraction layer;
+- test reflection, other-agent state estimation, and knowledge-state estimation.
+
+These are future experiments only. See [`docs/swarm_social_language_tom_plan.md`](swarm_social_language_tom_plan.md).
+
 ---
 
-## 12. Algorithm Proposal: Scented Active Boids
+## 13. Algorithm Proposal: Scented Active Boids
 
 `Scented Active Boids` is the proposed initial algorithm family for swarm-flight experiments.
 
@@ -305,7 +357,7 @@ for each agent:
 
 ---
 
-## 13. Candidate Metrics
+## 14. Candidate Metrics
 
 Minimum metrics for `EXP-SWARM-001`:
 
@@ -337,9 +389,24 @@ role_distribution
 role_switches
 ```
 
+Late-stage social / language metrics:
+
+```text
+social_memory_entries
+retrieval_precision
+status_report_consistency
+useful_signal_ratio
+knowledge_estimation_accuracy
+redundant_signal_rate
+coordination_success_rate
+hallucinated_memory_count
+llm_call_count
+llm_estimated_cost
+```
+
 ---
 
-## 14. Research Discipline
+## 15. Research Discipline
 
 RRT work remains historically useful as a planning baseline and implementation archive, but it is no longer the main research center.
 
@@ -352,4 +419,4 @@ visible emergent swarm motion
 measurable foraging and collective search
 ```
 
-Implementation should proceed from the simplest measurable swarm baseline before adding pheromones, predators, roles, learning, or cognition-like mechanisms.
+Implementation should proceed from the simplest measurable swarm baseline before adding pheromones, predators, roles, learning, language, LLMs, or cognition-like mechanisms.
