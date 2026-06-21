@@ -10,6 +10,8 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added Cursor rule for scientific review, code review, and experiment facilitation:
+  - `.cursor/rules/scientific_review_code_review_facilitation.mdc`
 - Added late-stage social language and Theory-of-Mind swarm research documentation:
   - `docs/swarm_social_language_tom_plan.md`
   - `docs/swarm_social_language_tom_science_advisor_critique.md`
@@ -170,6 +172,7 @@ This project follows a research-oriented changelog discipline: changes should be
   - wall-following may loop on non-simply-connected mazes (documented in EXP-001 spec);
   - `FrontierClaim` is hand-designed communication semantics and must be ablated against simpler signal modes before treating it as evidence of emergent coordination;
   - late-stage social-language / ToM-like mechanisms are documented as future research only and should not be implemented before simple swarm baselines are reproducible.
+- Governance note: `.cursor/rules/scientific_review_code_review_facilitation.mdc` adds a dedicated skeptical review role for experiment validation, code review, baseline criticism, developer-feedback integration, data review, and literature-search prompts before advancing research stages.
 
 ---
 
