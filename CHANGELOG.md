@@ -8,6 +8,10 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ## [Unreleased]
 
+### Changed
+
+- EXP-SWARM-005 journal report: embedded Inspector screenshot (`docs/journal/screenshots/scr1.png`) in `index.html` and markdown report via relative paths for offline/git-clone viewing.
+
 ### Added
 
 - Added experiment results journal:

@@ -14,6 +14,7 @@ Durable record of completed experiment runs, batch tests, ablations, and validat
 |------|------|
 | [index.html](index.html) | Master navigable report (mobile-ready) |
 | [index.md](index.md) | Markdown index of all reports |
+| [screenshots/](screenshots/) | Local images for HTML/Markdown reports |
 | [reports/](reports/) | One markdown file per completed experiment run |
 
 ## Format

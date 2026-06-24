@@ -22,6 +22,7 @@ docs/journal/
   README.md
   index.md
   index.html              # mobile-friendly master report with navigation
+  screenshots/              # local images referenced by reports (relative paths)
   reports/
     YYYY-MM-DD_<experiment-id>_<short-slug>.md
 ```
@@ -116,7 +117,8 @@ HTML requirements:
 - responsive layout;
 - sticky or top navigation;
 - each section shows **date + experiment name** in the heading;
-- readable on phone screens (16px+ body, high contrast, no horizontal scroll).
+- readable on phone screens (16px+ body, high contrast, no horizontal scroll);
+- embed screenshots with **relative paths** from `index.html` (e.g. `screenshots/scr1.png`) so clones of the repo show images offline.
 
 ---
 

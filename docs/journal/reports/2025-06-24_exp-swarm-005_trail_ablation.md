@@ -102,6 +102,10 @@ Trails were **biologically active** in code (deposits and steering occurred) but
 
 **Summary:** Scent trails with current deposit/follow rules **reduced** food collection and efficiency versus no trails. This is a valid negative ablation result, not an inconclusive run.
 
+![Inspector verdict panel after batch completion](../screenshots/scr1.png)
+
+*Figure: Unity Inspector — EXP-SWARM-005 batch verdict (2025-06-24). File: `docs/journal/screenshots/scr1.png`*
+
 ---
 
 ## 5. Interpretation
@@ -167,7 +171,7 @@ Trails were **biologically active** in code (deposits and steering occurred) but
 
 ## 9. Artifacts
 
-- Inspector verdict panel (screenshot, 2025-06-24)
+- Inspector verdict panel (screenshot, 2025-06-24): `docs/journal/screenshots/scr1.png`
 - Optional CSV if `logBatchRunsToCsv` enabled on harness
 - Markdown: this file
 - HTML: [../index.html#exp-swarm-005-trail-ablation-2025-06-24](../index.html#exp-swarm-005-trail-ablation-2025-06-24)
