@@ -81,6 +81,7 @@ Key documents:
 - [`docs/swarm_flight_research_agenda.md`](docs/swarm_flight_research_agenda.md) — active swarm-flight research agenda.
 - [`docs/research_agenda.md`](docs/research_agenda.md) — long-term research direction.
 - [`docs/project_memory.md`](docs/project_memory.md) — compact current project context.
+- [`docs/journal/`](docs/journal/) — experiment results journal ([HTML index](docs/journal/index.html) · [full markdown](docs/journal/journal.md)).
 - [`docs/hardware_and_algorithm_tiers.md`](docs/hardware_and_algorithm_tiers.md) — hardware profiles and algorithm scaling tiers.
 - [`docs/theory_of_mind_late_stage.md`](docs/theory_of_mind_late_stage.md) — late-stage Theory of Mind / social cognition roadmap.
 - [`docs/intelligence_as_dynamic_stability.md`](docs/intelligence_as_dynamic_stability.md) — long-term intelligence-as-dynamic-stability research framing.
