@@ -21,6 +21,7 @@ Do not add features only because they seem interesting. Connect them to:
 - `docs/experiment_001_single_agent.md`
 - `docs/project_memory.md`
 - `CHANGELOG.md`
+- `docs/journal/` (after completed experiment runs — see `.cursor/rules/experiment_journal.mdc`)
 
 ## 2. Project Memory Rule
 
@@ -51,6 +52,8 @@ Do not put long implementation details in project memory. Keep it concise and us
 ## 3. Changelog Rule
 
 Every meaningful change must update `CHANGELOG.md`.
+
+After a **completed experiment batch or validation milestone**, also add or update an entry in `docs/journal/` per `.cursor/rules/experiment_journal.mdc`.
 
 Use the following format:
 

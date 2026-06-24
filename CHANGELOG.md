@@ -10,6 +10,10 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added experiment results journal:
+  - `docs/journal/` with markdown reports, `index.md`, and mobile-friendly `index.html`
+  - `.cursor/rules/experiment_journal.mdc` (report format and update checklist)
+  - first report: `docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md`
 - Added EXP-SWARM-005 initial scent-trail ablation tooling:
   - `SwarmScentField` and optional scent steering on `ExperimentSwarm004Runner`;
   - `ExperimentSwarmTrailAblationHarness` with automated with/without-trail batch runs;
@@ -183,6 +187,12 @@ This project follows a research-oriented changelog discipline: changes should be
 - Metrics impacted: adds `food_site_count`, `food_units_per_site`, `food_discovered`, `food_returned`, `time_to_first_food`, `carrying_agents`, and `foraging_efficiency`.
 - Scientific reason: adds the first biologically meaningful task pressure: find resources and return them to a home zone.
 - Risks / limitations: this is hand-designed foraging without pheromones, recruitment, communication, learned behavior, or role differentiation.
+- Experiment: `EXP-SWARM-005 — Scent Trail Ablation` (batch run 2025-06-24)
+- Journal: `docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md`
+- Outcome: **TRAILS NOT WORKING** — mean food 31.5 with trails vs 37.0 without; 0/2 primary metrics passed.
+- Metrics impacted: batch comparison of `food_returned`, `foraging_efficiency`, `time_to_first_food`, `revisit_ratio`, `scent_deposits`, `scent_influenced_steps`.
+- Scientific reason: first controlled ablation of return-path scent vs no scent on the foraging task.
+- Risks / limitations: only two seeds; return-path deposit model may steer searchers toward hive; next step is food-biased deposits and lower scent weight before EXP-SWARM-006.
 - Metrics impacted: EXP-005 CSV includes `frontier_claims_created`, `claim_conflicts`, and `claimed_frontier_steps` in addition to signal metrics.
 - Scientific reason: test whether dynamic responsibility claims reduce duplicate exploration compared with no-communication, random signals, trails, and frontier hints.
 - Risks / limitations:

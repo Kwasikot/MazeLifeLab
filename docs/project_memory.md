@@ -13,25 +13,26 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-SWARM-004
+EXP-SWARM-005
 ```
 
 Name:
 
 ```text
-Bee-Hive Foraging
+Scent / Pheromone Field (Trail Ablation)
 ```
 
 Status:
 
 ```text
-IN PROGRESS - bee-hive foraging runner added; Play-mode validation pending
+IN PROGRESS - first batch ablation completed 2025-06-24; verdict TRAILS NOT WORKING; iterate deposit model before next gate
 ```
 
 Primary document:
 
 ```text
 docs/swarm_flight_research_agenda.md
+docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md
 ```
 
 Historical / archived experiments:
@@ -143,12 +144,30 @@ ExperimentRunnerExclusivity support for EXP-SWARM-004 over EXP-SWARM-003/002/001
 # Pending Validation For EXP-SWARM-004
 
 ```text
-Attach or enable ExperimentSwarm004Runner in a Unity scene
-Run Play mode on seed 42 with default 96 small low-flying agents
-Confirm agents discover small red food spheres and return to blue hive (agents stay yellow throughout)
-Inspect CSV output at results/experiment_swarm_004_foraging.csv
-Tune food discovery radius, pickup radius, hive radius, and foraging weight
-Use ExperimentSwarmTrailAblationHarness for automated with/without-trail batch comparison
+Play-mode foraging validated (agents find food and return to blue hive)
+Optional CSV review at results/experiment_swarm_004_foraging.csv
+```
+
+---
+
+# Journal Record For EXP-SWARM-005 (2025-06-24)
+
+```text
+First trail ablation batch: seeds 42 and 137, with vs without trails (4 runs)
+Verdict: TRAILS NOT WORKING (0/2 primary metrics)
+Without trails: mean food 37.0, efficiency 0.000055
+With trails: mean food 31.5, efficiency 0.000047
+Journal: docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md
+HTML index: docs/journal/index.html
+```
+
+# Pending Validation For EXP-SWARM-005
+
+```text
+Revise trail deposit semantics (food-biased, weaker return-path deposit)
+Lower scentWeight and rerun ExperimentSwarmTrailAblationHarness on seeds 42 and 137
+Add follow-up journal entry after retry batch
+Do not start EXP-SWARM-006 until trail ablation passes or is formally abandoned
 ```
 
 ---
@@ -348,12 +367,14 @@ Swarm-based flying artificial life using simple local rules, environmental cues,
 
 # Next Recommended Task
 
-Run `ExperimentSwarmTrailAblationHarness` in Play mode (at least seeds 42 and 137):
+Iterate EXP-SWARM-005 trail semantics and rerun ablation:
 
-- add harness + `ExperimentSwarm004Runner` on the same MazeSystem object;
-- disable `Auto Start On Play` on the runner when batch testing;
-- press **Run All Tests** and read the verdict panel;
-- tune `scentWeight`, `returnTrailDeposit`, and `foodDiscoveryDeposit` if verdict is FAIL/INCONCLUSIVE.
+- food-biased deposits; reduce return-path deposit;
+- lower `scentWeight` on `ExperimentSwarm004Runner`;
+- rerun `ExperimentSwarmTrailAblationHarness` (seeds 42, 137);
+- write follow-up entry in `docs/journal/reports/` and update `docs/journal/index.html`.
+
+See journal report: `docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md`
 
 ---
 

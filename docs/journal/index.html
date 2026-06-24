@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MazeLifeLab Experiment Journal</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e8eef4;
+      --muted: #9aa8b8;
+      --accent: #f0c040;
+      --pass: #5ecf8a;
+      --fail: #e07a7a;
+      --link: #7eb8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      background: var(--bg);
+      color: var(--text);
+    }
+    a { color: var(--link); }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+    header p {
+      margin: 0.25rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .layout {
+      display: flex;
+      flex-direction: column;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+    }
+    nav summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--accent);
+      list-style: none;
+    }
+    nav summary::-webkit-details-marker { display: none; }
+    nav ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.2rem;
+    }
+    nav li { margin: 0.35rem 0; }
+    main { padding: 1rem; }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 1.25rem;
+    }
+    section h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1.15rem;
+      color: var(--accent);
+    }
+    .meta {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .meta strong { color: var(--text); }
+    h3 {
+      font-size: 1rem;
+      margin: 1.25rem 0 0.5rem;
+      color: var(--text);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 0.5rem 0 1rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.55rem;
+      text-align: left;
+    }
+    th { background: #243044; color: var(--accent); }
+    .verdict-fail {
+      display: inline-block;
+      background: #3d2020;
+      color: var(--fail);
+      border: 1px solid var(--fail);
+      border-radius: 4px;
+      padding: 0.35rem 0.6rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    .next-step {
+      background: #1e2d22;
+      border-left: 4px solid var(--pass);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 6px 6px 0;
+    }
+    ul { padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; }
+    footer {
+      text-align: center;
+      padding: 1.5rem 1rem 2rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    @media (min-width: 720px) {
+      .layout { flex-direction: row; align-items: flex-start; }
+      nav {
+        width: 240px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 4.5rem;
+        border-bottom: none;
+        border-right: 1px solid var(--border);
+        min-height: calc(100vh - 4.5rem);
+      }
+      nav details { display: block; }
+      nav summary { display: none; }
+      nav ul { display: block !important; }
+      main { flex: 1; padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MazeLifeLab Experiment Journal</h1>
+    <p>Research results · mobile-friendly index</p>
+  </header>
+
+  <div class="layout">
+    <nav>
+      <details open>
+        <summary>Reports</summary>
+        <ul>
+          <li><a href="#exp-swarm-005-trail-ablation-2025-06-24">2025-06-24 · EXP-SWARM-005 Trail Ablation</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main>
+      <section id="exp-swarm-005-trail-ablation-2025-06-24">
+        <h2>EXP-SWARM-005 — Scent Trail Ablation</h2>
+        <div class="meta">
+          <strong>Date:</strong> 2025-06-24 &nbsp;|&nbsp;
+          <strong>ID:</strong> EXP-SWARM-005 &nbsp;|&nbsp;
+          <strong>Status:</strong> completed — negative result
+        </div>
+
+        <p><strong>Research question:</strong> Do decaying scent trails improve foraging vs the same swarm without trails?</p>
+
+        <div class="verdict-fail">VERDICT: TRAILS NOT WORKING (0 / 2 primary metrics passed)</div>
+
+        <h3>Protocol</h3>
+        <ul>
+          <li>Harness: <code>ExperimentSwarmTrailAblationHarness</code></li>
+          <li>Runner: <code>ExperimentSwarm004Runner</code></li>
+          <li>Seeds: 42, 137 — each with and without trails (4 runs)</li>
+          <li>Agents: 96 · max steps: 7000 · food target: 120</li>
+        </ul>
+
+        <h3>Results — without trails</h3>
+        <table>
+          <tr><th>Metric</th><th>Value</th></tr>
+          <tr><td>Runs</td><td>2</td></tr>
+          <tr><td>Mean food returned</td><td>37.0 / 120</td></tr>
+          <tr><td>Mean foraging efficiency</td><td>0.000055</td></tr>
+          <tr><td>Mean time to first food</td><td>863 steps</td></tr>
+          <tr><td>Mean revisit ratio</td><td>0.999</td></tr>
+          <tr><td>Per-run food</td><td>seed 42 = 49, seed 137 = 25</td></tr>
+        </table>
+
+        <h3>Results — with trails</h3>
+        <table>
+          <tr><th>Metric</th><th>Value</th></tr>
+          <tr><td>Runs</td><td>2</td></tr>
+          <tr><td>Mean food returned</td><td>31.5 / 120</td></tr>
+          <tr><td>Mean foraging efficiency</td><td>0.000047</td></tr>
+          <tr><td>Scent activity</td><td>deposits &amp; scent steps &gt; 0</td></tr>
+        </table>
+
+        <h3>Deltas (with vs without)</h3>
+        <table>
+          <tr><th>Metric</th><th>Change</th></tr>
+          <tr><td>Food returned</td><td>−14.9% (worse)</td></tr>
+          <tr><td>Foraging efficiency</td><td>−14.5% (worse)</td></tr>
+        </table>
+
+        <h3>Interpretation</h3>
+        <p>Scent trails were active but <strong>reduced</strong> food collection under the current rules. Likely causes: return-path deposits steer searchers toward the hive; scent weight too high; revisit ratio already ~0.999 without improvement. Only two seeds — treat as a first gate, not a final claim.</p>
+
+        <h3>Decision gate</h3>
+        <p><strong>Decision:</strong> Iterate EXP-SWARM-005. Do not advance to EXP-SWARM-006 yet.</p>
+
+        <div class="next-step">
+          <strong>Recommended next simulation step</strong>
+          <ol>
+            <li>Change deposits: strong at food discovery/pickup; weak or no continuous return-path deposit.</li>
+            <li>Lower <code>scentWeight</code> (e.g. 10 → 3–5).</li>
+            <li>Rerun the same 4-run batch (seeds 42, 137).</li>
+            <li>If still negative, add seeds 200 and 300 before abandoning trails.</li>
+          </ol>
+        </div>
+
+        <p>
+          <a href="reports/2025-06-24_exp-swarm-005_trail_ablation.md">Full markdown report</a>
+          · Git: <code>f2c668a</code>
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    MazeLifeLab · docs/journal · update via .cursor/rules/experiment_journal.mdc
+  </footer>
+</body>
+</html>

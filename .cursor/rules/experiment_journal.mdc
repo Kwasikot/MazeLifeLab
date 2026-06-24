@@ -1,0 +1,190 @@
+---
+description: Experiment results journal format, folder layout, and update discipline for MazeLifeLab
+globs:
+  - "docs/journal/**"
+  - "docs/project_memory.md"
+  - "CHANGELOG.md"
+alwaysApply: false
+---
+
+# MazeLifeLab Cursor Rules: Experiment Journal
+
+After a meaningful experiment run, batch test, ablation, or validation milestone, append or add a journal entry.
+
+The journal is the durable record of **what was run**, **what was measured**, **what was concluded**, and **what should happen next**. It complements `CHANGELOG.md` (code changes) and `docs/project_memory.md` (current project state).
+
+---
+
+## 1. Journal Location
+
+```text
+docs/journal/
+  README.md
+  index.md
+  index.html              # mobile-friendly master report with navigation
+  reports/
+    YYYY-MM-DD_<experiment-id>_<short-slug>.md
+```
+
+Example report file:
+
+```text
+docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md
+```
+
+---
+
+## 2. When To Write A Journal Entry
+
+Create or update journal artifacts when:
+
+- an experiment batch completes (pass or fail);
+- a validation milestone is reached;
+- a scientifically meaningful negative result is observed;
+- metrics or verdict rules change the research direction;
+- the maintainer explicitly requests a journal record.
+
+Do **not** journal every tiny code edit. Do journal every **completed test that answers a research question**.
+
+---
+
+## 3. Required Markdown Report Format
+
+Every file under `docs/journal/reports/` must use this structure:
+
+```markdown
+# <Experiment ID> — <Experiment Name>
+
+- **Date:** YYYY-MM-DD
+- **Experiment ID:** EXP-...
+- **Status:** completed | inconclusive | failed-validation | negative-result
+- **Runner / harness:** ...
+- **Seeds / conditions:** ...
+- **Related code:** ...
+
+## 1. Research Question
+
+## 2. Protocol Summary
+
+## 3. Configuration
+
+## 4. Results
+
+### Without baseline / condition A
+### With treatment / condition B
+### Deltas and verdict
+
+## 5. Interpretation
+
+## 6. Limitations
+
+## 7. Decision Gate
+
+Answer:
+1. Is it reproducible?
+2. Are metrics trustworthy?
+3. Does it beat or clarify baselines?
+4. Are failure modes understood?
+5. Is the next experiment justified?
+
+## 8. Recommended Next Step
+
+## 9. Artifacts
+
+- CSV paths, screenshots, commit hash, Unity scene notes
+```
+
+Use **cautious scientific language**. Negative results are valid results.
+
+---
+
+## 4. HTML Master Report Rule
+
+`docs/journal/index.html` is the **single navigable HTML journal** for mobile and desktop.
+
+When adding a report:
+
+1. Add the markdown file under `docs/journal/reports/`.
+2. Add a navigation link in `index.html` (nav list).
+3. Add a new `<section id="...">` in `index.html` with the same content as the markdown report (HTML, not a runtime MD loader).
+4. Update `docs/journal/index.md` with a one-line link to the report.
+5. Update `docs/journal/README.md` only if process changes.
+
+HTML requirements:
+
+- `<meta name="viewport" content="width=device-width, initial-scale=1">`
+- responsive layout;
+- sticky or top navigation;
+- each section shows **date + experiment name** in the heading;
+- readable on phone screens (16px+ body, high contrast, no horizontal scroll).
+
+---
+
+## 5. Cross-Document Updates
+
+After a journal entry for an active experiment, also update when appropriate:
+
+```text
+docs/project_memory.md   — active experiment status, next task
+CHANGELOG.md             — Research Notes entry pointing to the journal report
+docs/journal/index.md    — report index
+docs/journal/index.html  — navigable HTML entry
+```
+
+`CHANGELOG.md` Research Notes should include:
+
+- experiment id;
+- verdict or outcome;
+- link to markdown report path;
+- metrics impacted;
+- risks / limitations in one line.
+
+---
+
+## 6. Naming Convention
+
+Report filename:
+
+```text
+YYYY-MM-DD_<experiment-id-lowercase>_<short-slug>.md
+```
+
+Examples:
+
+```text
+2025-06-24_exp-swarm-005_trail_ablation.md
+2025-07-01_exp-swarm-004_foraging_validation.md
+```
+
+HTML section id:
+
+```text
+exp-swarm-005-trail-ablation-2025-06-24
+```
+
+---
+
+## 7. Anti-Patterns
+
+Do not:
+
+- claim trails, intelligence, or emergence without metrics;
+- omit negative results;
+- store secrets or API keys in journal files;
+- replace CSV raw data with only prose (link or summarize CSV paths);
+- let `index.html` drift from markdown reports.
+
+---
+
+## 8. Agent Workflow Checklist
+
+After an experiment completes:
+
+```text
+[ ] Write docs/journal/reports/YYYY-MM-DD_....md
+[ ] Add section + nav link to docs/journal/index.html
+[ ] Update docs/journal/index.md
+[ ] Update docs/project_memory.md
+[ ] Add CHANGELOG.md Research Notes entry
+[ ] State recommended next simulation step in the report
+```
