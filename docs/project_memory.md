@@ -148,6 +148,19 @@ Run Play mode on seed 42 with default 96 small low-flying agents
 Confirm agents discover small red food spheres and return to blue hive (agents stay yellow throughout)
 Inspect CSV output at results/experiment_swarm_004_foraging.csv
 Tune food discovery radius, pickup radius, hive radius, and foraging weight
+Use ExperimentSwarmTrailAblationHarness for automated with/without-trail batch comparison
+```
+
+---
+
+# Implemented For EXP-SWARM-005 (Initial)
+
+```text
+SwarmScentField (decaying XZ scent grid)
+Optional scent-trail steering on ExperimentSwarm004Runner (enableScentTrails)
+ExperimentSwarmTrailAblationHarness (batch with/without trail runs + automated verdict panel)
+SwarmTrailAblationEvaluator (concrete pass/fail thresholds on food return, efficiency, first food, revisit)
+ExperimentSwarmTrailAblationHarnessEditor (Run All Tests button + statistics panel)
 ```
 
 ---
@@ -335,12 +348,12 @@ Swarm-based flying artificial life using simple local rules, environmental cues,
 
 # Next Recommended Task
 
-Validate `EXP-SWARM-004 - Bee-Hive Foraging` in Unity Play mode:
+Run `ExperimentSwarmTrailAblationHarness` in Play mode (at least seeds 42 and 137):
 
-- add or enable `ExperimentSwarm004Runner` on a scene object;
-- confirm red food sites and blue hive marker are visible;
-- verify agents discover food and return to the blue hive (agents stay yellow);
-- compare `food_returned`, `time_to_first_food`, and `foraging_efficiency`.
+- add harness + `ExperimentSwarm004Runner` on the same MazeSystem object;
+- disable `Auto Start On Play` on the runner when batch testing;
+- press **Run All Tests** and read the verdict panel;
+- tune `scentWeight`, `returnTrailDeposit`, and `foodDiscoveryDeposit` if verdict is FAIL/INCONCLUSIVE.
 
 ---
 

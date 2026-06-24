@@ -8,6 +8,7 @@ public struct SwarmFlightSettings
     public IReadOnlyList<SwarmFlightObstacle> Obstacles;
     public ISwarmExplorationField ExplorationField;
     public ISwarmForagingField ForagingField;
+    public ISwarmScentField ScentField;
     public float NeighborRadius;
     public float SeparationRadius;
     public float MaxSpeed;
@@ -26,6 +27,7 @@ public struct SwarmFlightSettings
     public float ExplorationProbeDistance;
     public float ExplorationWeight;
     public float ForagingWeight;
+    public float ScentWeight;
 }
 
 public struct SwarmFlightObstacle
@@ -72,6 +74,15 @@ public interface ISwarmForagingField
         out Vector3 direction);
 }
 
+public interface ISwarmScentField
+{
+    bool TrySampleScentDirection(
+        int agentIndex,
+        Vector3 position,
+        Vector3 velocity,
+        out Vector3 direction);
+}
+
 public class SwarmFlightAgent : MonoBehaviour
 {
     Vector3 _velocity;
@@ -82,6 +93,8 @@ public class SwarmFlightAgent : MonoBehaviour
     public int BoundaryHits { get; private set; }
     public bool LastUsedExplorationBias { get; private set; }
     public int ExplorationBiasSteps { get; private set; }
+    public bool LastUsedScentBias { get; private set; }
+    public int ScentBiasSteps { get; private set; }
 
     public void BeginEpisode(int agentIndex, Vector3 initialVelocity)
     {
@@ -90,6 +103,8 @@ public class SwarmFlightAgent : MonoBehaviour
         BoundaryHits = 0;
         LastUsedExplorationBias = false;
         ExplorationBiasSteps = 0;
+        LastUsedScentBias = false;
+        ScentBiasSteps = 0;
         _enabled = true;
         OrientToVelocity();
     }
@@ -109,6 +124,7 @@ public class SwarmFlightAgent : MonoBehaviour
             return;
 
         LastUsedExplorationBias = false;
+        LastUsedScentBias = false;
         Vector3 steering =
             ComputeSeparation(agents, settings) * settings.SeparationWeight +
             ComputeAlignment(agents, settings) * settings.AlignmentWeight +
@@ -118,7 +134,8 @@ public class SwarmFlightAgent : MonoBehaviour
             ComputeMazeWallAvoidance(settings) * settings.MazeWallAvoidanceWeight +
             ComputeObstacleAvoidance(settings) * settings.ObstacleAvoidanceWeight +
             ComputeExplorationBias(settings) * settings.ExplorationWeight +
-            ComputeForagingBias(settings) * settings.ForagingWeight;
+            ComputeForagingBias(settings) * settings.ForagingWeight +
+            ComputeScentBias(settings) * settings.ScentWeight;
 
         steering = Vector3.ClampMagnitude(steering, settings.MaxForce);
         _velocity = Vector3.ClampMagnitude(_velocity + steering * deltaTime, settings.MaxSpeed);
@@ -324,6 +341,25 @@ public class SwarmFlightAgent : MonoBehaviour
             return Vector3.zero;
         }
 
+        return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.zero;
+    }
+
+    Vector3 ComputeScentBias(SwarmFlightSettings settings)
+    {
+        if (settings.ScentField == null || settings.ScentWeight <= 0f)
+            return Vector3.zero;
+
+        if (!settings.ScentField.TrySampleScentDirection(
+                AgentIndex,
+                transform.position,
+                _velocity,
+                out Vector3 direction))
+        {
+            return Vector3.zero;
+        }
+
+        LastUsedScentBias = true;
+        ScentBiasSteps++;
         return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.zero;
     }
 

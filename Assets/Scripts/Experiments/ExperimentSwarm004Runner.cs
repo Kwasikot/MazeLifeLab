@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ public enum SwarmForagingAgentState
 }
 
 [DefaultExecutionOrder(150)]
-public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, ISwarmForagingField
+public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, ISwarmForagingField, ISwarmScentField
 {
     static readonly Color SearchingColor = new Color(1f, 0.85f, 0.2f);
     static readonly Color HiveColor = new Color(0.15f, 0.45f, 1f);
@@ -86,6 +87,14 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
     [SerializeField] float mazeWallAvoidanceDistance = 2.5f;
     [SerializeField] float mazeWallAvoidanceWeight = 10f;
 
+    [Header("EXP-SWARM-005 Scent Trails")]
+    [SerializeField] bool enableScentTrails;
+    [SerializeField] float scentWeight = 10f;
+    [SerializeField] float scentDecayPerStep = 0.985f;
+    [SerializeField] float scentMaxStrength = 12f;
+    [SerializeField] float returnTrailDeposit = 1.4f;
+    [SerializeField] float foodDiscoveryDeposit = 2.5f;
+
     readonly List<AgentRuntime> _agents = new List<AgentRuntime>();
     readonly List<FoodSite> _foodSites = new List<FoodSite>();
 
@@ -105,6 +114,10 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
     int _totalVoxelSamples;
     int _revisitSamples;
     bool _isRunning;
+    SwarmScentField _scentField;
+    int _scentInfluencedSteps;
+    SwarmForagingEpisodeSnapshot _lastSnapshot;
+    bool _suppressMetricsLogging;
 
     public int ConfiguredAgentCount => agentCount;
     public int AgentCount => _agents.Count;
@@ -118,6 +131,19 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
     public float RevisitRatio { get; private set; }
     public float ForagingEfficiency { get; private set; }
     public EpisodeTerminationReason TerminationReason { get; private set; } = EpisodeTerminationReason.None;
+    public bool EnableScentTrails
+    {
+        get => enableScentTrails;
+        set => enableScentTrails = value;
+    }
+    public int ScentDeposits => _scentField != null ? _scentField.TotalDeposits : 0;
+    public int ScentInfluencedSteps => _scentInfluencedSteps;
+    public SwarmForagingEpisodeSnapshot LastEpisodeSnapshot => _lastSnapshot;
+    public bool AutoStartOnPlay
+    {
+        get => autoStartOnPlay;
+        set => autoStartOnPlay = value;
+    }
 
     void Awake()
     {
@@ -159,6 +185,11 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         boundaryMargin = Mathf.Max(0.1f, boundaryMargin);
         mazeWallAvoidanceDistance = Mathf.Max(0f, mazeWallAvoidanceDistance);
         mazeWallAvoidanceWeight = Mathf.Max(0f, mazeWallAvoidanceWeight);
+        scentWeight = Mathf.Max(0f, scentWeight);
+        scentDecayPerStep = Mathf.Clamp(scentDecayPerStep, 0.8f, 1f);
+        scentMaxStrength = Mathf.Max(0.5f, scentMaxStrength);
+        returnTrailDeposit = Mathf.Max(0f, returnTrailDeposit);
+        foodDiscoveryDeposit = Mathf.Max(0f, foodDiscoveryDeposit);
     }
 
     void OnEnable()
@@ -183,6 +214,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             _agents[i].Agent.ExecuteStep(agentComponents, settings, Time.fixedDeltaTime, _rng);
 
         UpdateForagingState();
+        UpdateScentField();
         TrackCoverage();
         _steps++;
 
@@ -190,6 +222,21 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         {
             EndEpisode(AllFoodCollected() ? EpisodeTerminationReason.Success : EpisodeTerminationReason.Timeout);
         }
+    }
+
+    public void PrepareForBatchRun(int episodeSeed, bool scentTrailsEnabled, bool logMetricsToCsv = false)
+    {
+        seed = episodeSeed;
+        enableScentTrails = scentTrailsEnabled;
+        autoStartOnPlay = false;
+        _suppressMetricsLogging = !logMetricsToCsv;
+    }
+
+    public IEnumerator RunEpisodeUntilComplete()
+    {
+        BeginEpisode();
+        while (_isRunning)
+            yield return new WaitForFixedUpdate();
     }
 
     [ContextMenu("Begin Episode")]
@@ -200,6 +247,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         ResolveActiveArena();
         ResetMetrics();
         ResetCoverageField();
+        ResetScentField();
         EnsureRoots();
         SpawnHive();
         SpawnFoodSites();
@@ -229,26 +277,52 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         for (int i = 0; i < _agents.Count; i++)
             _agents[i].Agent.EndEpisode();
 
-        _metricsLogger.LogEpisode(new ExperimentSwarm004EpisodeMetrics
+        if (!_suppressMetricsLogging)
+        {
+            _metricsLogger.LogEpisode(new ExperimentSwarm004EpisodeMetrics
+            {
+                seed = seed,
+                agentCount = _agents.Count,
+                foodSiteCount = _foodSites.Count,
+                foodUnitsPerSite = foodUnitsPerSite,
+                steps = _steps,
+                foodDiscovered = FoodDiscovered,
+                foodReturned = FoodReturned,
+                timeToFirstFood = TimeToFirstFood,
+                carryingAgents = CarryingAgents,
+                coverageVolumePercent = CoverageVolumePercent,
+                revisitRatio = RevisitRatio,
+                foragingEfficiency = ForagingEfficiency,
+                terminationReason = reason
+            });
+
+            Debug.Log(
+                $"[EXP-SWARM-004] Ended reason={reason} steps={_steps} " +
+                $"foodReturned={FoodReturned} foodDiscovered={FoodDiscovered} " +
+                $"scentTrails={enableScentTrails} scentSteps={ScentInfluencedSteps}.");
+        }
+
+        _lastSnapshot = BuildEpisodeSnapshot(reason);
+        _suppressMetricsLogging = false;
+    }
+
+    SwarmForagingEpisodeSnapshot BuildEpisodeSnapshot(EpisodeTerminationReason reason)
+    {
+        return new SwarmForagingEpisodeSnapshot
         {
             seed = seed,
-            agentCount = _agents.Count,
-            foodSiteCount = _foodSites.Count,
-            foodUnitsPerSite = foodUnitsPerSite,
+            scentTrailsEnabled = enableScentTrails,
             steps = _steps,
-            foodDiscovered = FoodDiscovered,
             foodReturned = FoodReturned,
+            foodDiscovered = FoodDiscovered,
             timeToFirstFood = TimeToFirstFood,
-            carryingAgents = CarryingAgents,
-            coverageVolumePercent = CoverageVolumePercent,
-            revisitRatio = RevisitRatio,
             foragingEfficiency = ForagingEfficiency,
+            revisitRatio = RevisitRatio,
+            coverageVolumePercent = CoverageVolumePercent,
+            scentDeposits = ScentDeposits,
+            scentInfluencedSteps = ScentInfluencedSteps,
             terminationReason = reason
-        });
-
-        Debug.Log(
-            $"[EXP-SWARM-004] Ended reason={reason} steps={_steps} " +
-            $"foodReturned={FoodReturned} foodDiscovered={FoodDiscovered}.");
+        };
     }
 
     void EndEpisodeWithoutLogging()
@@ -286,6 +360,21 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         RevisitRatio = 0f;
         ForagingEfficiency = 0f;
         TerminationReason = EpisodeTerminationReason.None;
+        _scentInfluencedSteps = 0;
+    }
+
+    void ResetScentField()
+    {
+        if (!enableScentTrails)
+        {
+            _scentField = null;
+            return;
+        }
+
+        if (_scentField == null)
+            _scentField = new SwarmScentField(scentDecayPerStep, scentMaxStrength);
+
+        _scentField.Reset(_activeArenaCenter, _activeArenaSize, coverageGridResolution);
     }
 
     void ResetCoverageField()
@@ -407,6 +496,8 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
                     _foodDiscovered++;
                     if (_timeToFirstFood < 0)
                         _timeToFirstFood = _steps;
+                    if (enableScentTrails && _scentField != null && foodDiscoveryDeposit > 0f)
+                        _scentField.DepositAt(site.Position, foodDiscoveryDeposit);
                 }
 
                 runtime.FoodTargetIndex = foodIndex;
@@ -444,6 +535,39 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         }
 
         return best;
+    }
+
+    void UpdateScentField()
+    {
+        if (!enableScentTrails || _scentField == null)
+            return;
+
+        _scentField.DecayStep();
+        for (int i = 0; i < _agents.Count; i++)
+        {
+            AgentRuntime runtime = _agents[i];
+            Vector3 position = runtime.Agent.transform.position;
+            if (runtime.State == SwarmForagingAgentState.ReturningHome && returnTrailDeposit > 0f)
+                _scentField.DepositAt(position, returnTrailDeposit);
+
+            if (runtime.Agent.LastUsedScentBias)
+                _scentInfluencedSteps++;
+        }
+    }
+
+    public bool TrySampleScentDirection(int agentIndex, Vector3 position, Vector3 velocity, out Vector3 direction)
+    {
+        direction = Vector3.zero;
+        if (!enableScentTrails || _scentField == null || scentWeight <= 0f)
+            return false;
+
+        if (agentIndex < 0 || agentIndex >= _agents.Count)
+            return false;
+
+        if (_agents[agentIndex].State != SwarmForagingAgentState.Searching)
+            return false;
+
+        return _scentField.TrySampleGradientDirection(position, out direction);
     }
 
     public bool TrySampleForagingDirection(int agentIndex, Vector3 position, Vector3 velocity, out Vector3 direction)
@@ -512,6 +636,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             Obstacles = null,
             ExplorationField = this,
             ForagingField = this,
+            ScentField = enableScentTrails ? this : null,
             NeighborRadius = neighborRadius,
             SeparationRadius = separationRadius,
             MaxSpeed = maxSpeed,
@@ -527,7 +652,8 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             MazeWallAvoidanceWeight = mazeWallAvoidanceWeight,
             ExplorationProbeDistance = explorationProbeDistance,
             ExplorationWeight = explorationWeight,
-            ForagingWeight = foragingWeight
+            ForagingWeight = foragingWeight,
+            ScentWeight = enableScentTrails ? scentWeight : 0f
         };
     }
 

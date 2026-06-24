@@ -10,6 +10,11 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Added EXP-SWARM-005 initial scent-trail ablation tooling:
+  - `SwarmScentField` and optional scent steering on `ExperimentSwarm004Runner`;
+  - `ExperimentSwarmTrailAblationHarness` with automated with/without-trail batch runs;
+  - `SwarmTrailAblationEvaluator` pass/fail verdict from concrete metric thresholds;
+  - Inspector panel and Game-view OSD with live batch statistics.
 - Added Cursor rule for scientific review, code review, and experiment facilitation:
   - `.cursor/rules/scientific_review_code_review_facilitation.mdc`
 - Added late-stage social language and Theory-of-Mind swarm research documentation:
