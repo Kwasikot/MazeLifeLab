@@ -15,6 +15,12 @@ This project follows a research-oriented changelog discipline: changes should be
 - Added late-stage social language and Theory-of-Mind swarm research documentation:
   - `docs/swarm_social_language_tom_plan.md`
   - `docs/swarm_social_language_tom_science_advisor_critique.md`
+- Added `EXP-SWARM-004 - Bee-Hive Foraging` implementation:
+  - `Assets/Scripts/Experiments/ExperimentSwarm004Runner.cs`
+  - `Assets/Scripts/Experiments/ExperimentSwarm004MetricsLogger.cs`
+  - visible blue hive/home zone and small red food spheres;
+  - searching and returning-home forager states;
+  - CSV output: `results/experiment_swarm_004_foraging.csv`.
 - Added `EXP-SWARM-003 - Fruit-Fly Search / Random Exploration` implementation:
   - `Assets/Scripts/Experiments/ExperimentSwarm003Runner.cs`
   - `Assets/Scripts/Experiments/ExperimentSwarm003MetricsLogger.cs`
@@ -103,6 +109,8 @@ This project follows a research-oriented changelog discipline: changes should be
 - Extended `docs/swarm_flight_research_agenda.md` with a late-stage social language and operational Theory-of-Mind direction, while explicitly keeping language, LLMs, and cognition-like mechanisms out of the current simple swarm stages.
 - Changed `MazeWallVisualizer` to render raised 3D wall boxes instead of flat red line strips, making swarm-flight maze structure visible.
 - Pivoted the active research direction from RRT-centered maze path planning to swarm-based flying artificial life agents.
+- Started `EXP-SWARM-004` implementation with hive/home, food sites, search/return state, and foraging metrics.
+- Changed active experiment in project memory to `EXP-SWARM-004 — Bee-Hive Foraging`.
 - Started `EXP-SWARM-003` implementation with fruit-fly-style noisy exploration and coverage-memory metrics.
 - Started `EXP-SWARM-002` implementation with a maze-footprint obstacle field, visible obstacle markers, and obstacle-specific metrics.
 - Changed active experiment in project memory to `EXP-SWARM-003 — Fruit-Fly Search / Random Exploration`.
@@ -166,6 +174,10 @@ This project follows a research-oriented changelog discipline: changes should be
 - Metrics impacted: adds `new_voxels_discovered`, `revisit_ratio`, `mean_visit_count`, `exploration_efficiency`, and `frontier_bias_steps`.
 - Scientific reason: introduces the first explicit exploration pressure by biasing agents toward low-visited arena voxels while preserving noisy local search.
 - Risks / limitations: coverage seeking is hand-designed novelty bias, not learned behavior and not yet foraging, scent, hive, predators, roles, language, LLMs, or Theory-of-Mind-like mechanisms.
+- Experiment: `EXP-SWARM-004 — Bee-Hive Foraging`
+- Metrics impacted: adds `food_site_count`, `food_units_per_site`, `food_discovered`, `food_returned`, `time_to_first_food`, `carrying_agents`, and `foraging_efficiency`.
+- Scientific reason: adds the first biologically meaningful task pressure: find resources and return them to a home zone.
+- Risks / limitations: this is hand-designed foraging without pheromones, recruitment, communication, learned behavior, or role differentiation.
 - Metrics impacted: EXP-005 CSV includes `frontier_claims_created`, `claim_conflicts`, and `claimed_frontier_steps` in addition to signal metrics.
 - Scientific reason: test whether dynamic responsibility claims reduce duplicate exploration compared with no-communication, random signals, trails, and frontier hints.
 - Risks / limitations:

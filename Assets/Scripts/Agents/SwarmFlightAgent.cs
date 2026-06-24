@@ -7,6 +7,7 @@ public struct SwarmFlightSettings
     public Vector3 ArenaSize;
     public IReadOnlyList<SwarmFlightObstacle> Obstacles;
     public ISwarmExplorationField ExplorationField;
+    public ISwarmForagingField ForagingField;
     public float NeighborRadius;
     public float SeparationRadius;
     public float MaxSpeed;
@@ -24,6 +25,7 @@ public struct SwarmFlightSettings
     public float ObstacleAvoidanceWeight;
     public float ExplorationProbeDistance;
     public float ExplorationWeight;
+    public float ForagingWeight;
 }
 
 public struct SwarmFlightObstacle
@@ -58,6 +60,15 @@ public interface ISwarmExplorationField
         Vector3 position,
         Vector3 velocity,
         float probeDistance,
+        out Vector3 direction);
+}
+
+public interface ISwarmForagingField
+{
+    bool TrySampleForagingDirection(
+        int agentIndex,
+        Vector3 position,
+        Vector3 velocity,
         out Vector3 direction);
 }
 
@@ -106,7 +117,8 @@ public class SwarmFlightAgent : MonoBehaviour
             ComputeBoundaryAvoidance(settings) * settings.BoundaryWeight +
             ComputeMazeWallAvoidance(settings) * settings.MazeWallAvoidanceWeight +
             ComputeObstacleAvoidance(settings) * settings.ObstacleAvoidanceWeight +
-            ComputeExplorationBias(settings) * settings.ExplorationWeight;
+            ComputeExplorationBias(settings) * settings.ExplorationWeight +
+            ComputeForagingBias(settings) * settings.ForagingWeight;
 
         steering = Vector3.ClampMagnitude(steering, settings.MaxForce);
         _velocity = Vector3.ClampMagnitude(_velocity + steering * deltaTime, settings.MaxSpeed);
@@ -295,6 +307,23 @@ public class SwarmFlightAgent : MonoBehaviour
 
         LastUsedExplorationBias = true;
         ExplorationBiasSteps++;
+        return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.zero;
+    }
+
+    Vector3 ComputeForagingBias(SwarmFlightSettings settings)
+    {
+        if (settings.ForagingField == null || settings.ForagingWeight <= 0f)
+            return Vector3.zero;
+
+        if (!settings.ForagingField.TrySampleForagingDirection(
+                AgentIndex,
+                transform.position,
+                _velocity,
+                out Vector3 direction))
+        {
+            return Vector3.zero;
+        }
+
         return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.zero;
     }
 

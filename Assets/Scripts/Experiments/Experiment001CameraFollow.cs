@@ -14,10 +14,14 @@ public class Experiment001CameraFollow : MonoBehaviour
     [SerializeField] float minOrthographicSize = 4f;
     [SerializeField] float maxOrthographicSize = 10000f;
     [SerializeField] float zoomSpeed = 8f;
+    [SerializeField] float panSpeed = 1.35f;
+    [SerializeField] float keyboardPanSpeed = 24f;
     [SerializeField] float followSmoothing = 12f;
     [SerializeField] KeyCode viewFullMazeKey = KeyCode.F;
+    [SerializeField] KeyCode resetViewKey = KeyCode.Home;
 
     Vector3 _mazeCenter = new Vector3(50f, 0f, 50f);
+    Vector3 _panOffset = Vector3.zero;
     float _fullViewOrthographicSize;
     bool _viewFullMaze = true;
     bool _followTeam;
@@ -102,6 +106,7 @@ public class Experiment001CameraFollow : MonoBehaviour
     {
         _viewFullMaze = true;
         _followTeam = false;
+        _panOffset = Vector3.zero;
         orthographicSize = _fullViewOrthographicSize > 0f ? _fullViewOrthographicSize : maxOrthographicSize;
         ApplyCameraProjection();
 
@@ -115,6 +120,7 @@ public class Experiment001CameraFollow : MonoBehaviour
     {
         _viewFullMaze = false;
         _followTeam = false;
+        _panOffset = Vector3.zero;
         orthographicSize = Mathf.Clamp(orthographicSize, minOrthographicSize, maxOrthographicSize * 0.45f);
         ApplyCameraProjection();
 
@@ -128,6 +134,7 @@ public class Experiment001CameraFollow : MonoBehaviour
     {
         _viewFullMaze = false;
         _followTeam = true;
+        _panOffset = Vector3.zero;
         _teamCellSize = Mathf.Max(1, cellSize);
 
         if (agents == null || agents.Count == 0)
@@ -188,6 +195,43 @@ public class Experiment001CameraFollow : MonoBehaviour
                 ShowFullMazeView(snapImmediately: true);
             }
         }
+
+        if (Input.GetKeyDown(resetViewKey))
+        {
+            _panOffset = Vector3.zero;
+            if (_viewFullMaze)
+                orthographicSize = _fullViewOrthographicSize > 0f ? _fullViewOrthographicSize : maxOrthographicSize;
+            _snapNextFrame = true;
+        }
+
+        HandlePanInput();
+    }
+
+    void HandlePanInput()
+    {
+        float panScale = orthographicSize * panSpeed * 0.02f;
+        if (Input.GetMouseButton(1) || Input.GetMouseButton(2))
+        {
+            _panOffset += new Vector3(
+                -Input.GetAxis("Mouse X") * panScale,
+                0f,
+                -Input.GetAxis("Mouse Y") * panScale);
+        }
+
+        Vector3 keyboard = Vector3.zero;
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+            keyboard.z += 1f;
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+            keyboard.z -= 1f;
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+            keyboard.x -= 1f;
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+            keyboard.x += 1f;
+
+        if (keyboard.sqrMagnitude > 0f)
+        {
+            _panOffset += keyboard.normalized * (keyboardPanSpeed * orthographicSize * 0.01f * Time.deltaTime);
+        }
     }
 
     void LateUpdate()
@@ -232,7 +276,7 @@ public class Experiment001CameraFollow : MonoBehaviour
     Vector3 GetFocusPoint()
     {
         if (_viewFullMaze)
-            return _mazeCenter;
+            return _mazeCenter + _panOffset;
 
         if (_followTeam && _teamTargets != null && _teamTargets.Length > 0)
         {
@@ -248,13 +292,13 @@ public class Experiment001CameraFollow : MonoBehaviour
             }
 
             if (count > 0)
-                return sum / count;
+                return sum / count + _panOffset;
         }
 
         if (target != null)
-            return target.position;
+            return target.position + _panOffset;
 
-        return _mazeCenter;
+        return _mazeCenter + _panOffset;
     }
 
     void UpdateTeamFraming()

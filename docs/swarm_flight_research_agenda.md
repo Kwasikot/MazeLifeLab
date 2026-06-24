@@ -255,6 +255,13 @@ Purpose:
 - measure resource discovery, return success, and collection rate;
 - compare independent foragers against socially influenced foragers.
 
+Initial implementation:
+
+- `ExperimentSwarm004Runner` adds a visible hive zone and deterministic food/resource sites.
+- Agents switch between `Searching` and `ReturningHome`.
+- Searchers discover nearby food and steer back to the blue hive (agents keep their yellow color).
+- CSV metrics include `food_discovered`, `food_returned`, `time_to_first_food`, `carrying_agents`, and `foraging_efficiency`.
+
 ### EXP-SWARM-005 - Scent / Pheromone Field
 
 Purpose:

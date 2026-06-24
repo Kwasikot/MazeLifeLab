@@ -33,6 +33,8 @@ public static class ExperimentRunnerExclusivity
             return runner005.ConfiguredAgentCount;
         if (runner is Experiment006Runner runner006)
             return runner006.ConfiguredAgentCount;
+        if (runner is ExperimentSwarm004Runner swarm004)
+            return swarm004.ConfiguredAgentCount;
         if (runner is ExperimentSwarm003Runner swarm003)
             return swarm003.ConfiguredAgentCount;
         if (runner is ExperimentSwarm002Runner swarm002)
@@ -58,10 +60,15 @@ public static class ExperimentRunnerExclusivity
         DisableIfNot<ExperimentSwarm001Runner>(host, activeRunner);
         DisableIfNot<ExperimentSwarm002Runner>(host, activeRunner);
         DisableIfNot<ExperimentSwarm003Runner>(host, activeRunner);
+        DisableIfNot<ExperimentSwarm004Runner>(host, activeRunner);
     }
 
     static MonoBehaviour ResolveWinningRunner(GameObject host)
     {
+        var swarm004 = host.GetComponent<ExperimentSwarm004Runner>();
+        if (swarm004 != null && swarm004.enabled)
+            return swarm004;
+
         var swarm003 = host.GetComponent<ExperimentSwarm003Runner>();
         if (swarm003 != null && swarm003.enabled)
             return swarm003;

@@ -13,19 +13,19 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-SWARM-003
+EXP-SWARM-004
 ```
 
 Name:
 
 ```text
-Fruit-Fly Search / Random Exploration
+Bee-Hive Foraging
 ```
 
 Status:
 
 ```text
-IN PROGRESS - fruit-fly exploration runner added; Play-mode validation pending
+IN PROGRESS - bee-hive foraging runner added; Play-mode validation pending
 ```
 
 Primary document:
@@ -48,16 +48,16 @@ EXP-001 — Single-Agent Navigation Benchmark
 
 # Current Goal
 
-Build the first task-oriented swarm-flight exploration experiment:
+Build the first bee-hive foraging experiment:
 
 - many small flying agents;
 - simple local rules;
 - visible emergent swarm behavior;
 - measurable baseline metrics.
-- voxel coverage memory across the flight arena;
-- noisy fruit-fly-style novelty seeking;
-- comparison mode: PlainBoids vs FruitFlySearch;
-- coverage, revisit, and exploration-efficiency metrics.
+- visible hive/home zone;
+- deterministic food/resource sites;
+- simple searching and returning-home agent states;
+- food discovery, food return, and foraging-efficiency metrics.
 
 The initial algorithm proposal is `Scented Active Boids`, beginning with separation, alignment, cohesion, random wander, and boundary avoidance.
 
@@ -126,6 +126,28 @@ Run Play mode on seed 42 with default 96 small low-flying agents
 Compare PlainBoids and FruitFlySearch modes
 Confirm coverage grows and revisit ratio is logged
 Inspect CSV output at results/experiment_swarm_003_exploration.csv
+```
+
+---
+
+# Implemented For EXP-SWARM-004
+
+```text
+ExperimentSwarm004Runner (hive zone, food sites, searching / returning-home state loop)
+ExperimentSwarm004MetricsLogger (food discovery, food return, and foraging-efficiency CSV metrics)
+SwarmFlightAgent optional per-agent foraging-field steering hook
+Visible blue hive marker, small red food spheres, and yellow agents (no color change when carrying)
+ExperimentRunnerExclusivity support for EXP-SWARM-004 over EXP-SWARM-003/002/001
+```
+
+# Pending Validation For EXP-SWARM-004
+
+```text
+Attach or enable ExperimentSwarm004Runner in a Unity scene
+Run Play mode on seed 42 with default 96 small low-flying agents
+Confirm agents discover small red food spheres and return to blue hive (agents stay yellow throughout)
+Inspect CSV output at results/experiment_swarm_004_foraging.csv
+Tune food discovery radius, pickup radius, hive radius, and foraging weight
 ```
 
 ---
@@ -313,12 +335,12 @@ Swarm-based flying artificial life using simple local rules, environmental cues,
 
 # Next Recommended Task
 
-Validate `EXP-SWARM-003 - Fruit-Fly Search / Random Exploration` in Unity Play mode:
+Validate `EXP-SWARM-004 - Bee-Hive Foraging` in Unity Play mode:
 
-- add or enable `ExperimentSwarm003Runner` on a scene object;
-- run seed 42 in `PlainBoids`, then `FruitFlySearch`;
-- compare coverage volume, revisit ratio, and exploration efficiency;
-- tune exploration weight, probe distance, and wander weight.
+- add or enable `ExperimentSwarm004Runner` on a scene object;
+- confirm red food sites and blue hive marker are visible;
+- verify agents discover food and return to the blue hive (agents stay yellow);
+- compare `food_returned`, `time_to_first_food`, and `foraging_efficiency`.
 
 ---
 

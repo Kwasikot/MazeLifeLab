@@ -47,7 +47,7 @@ public class ExperimentSwarm003Runner : MonoBehaviour, ISwarmExplorationField
     [SerializeField] float mazeFlightMinHeight = 0.7f;
     [SerializeField] float mazeFlightBandHeight = 1.4f;
     [SerializeField] float spawnRadius = 12f;
-    [SerializeField] float agentScale = 0.7f;
+    [SerializeField] float agentScale = 0f;
     [SerializeField] int coverageGridResolution = 20;
     [SerializeField] bool drawArenaGizmos = true;
     [SerializeField] bool drawCoverageGizmos = true;
@@ -343,13 +343,8 @@ public class ExperimentSwarm003Runner : MonoBehaviour, ISwarmExplorationField
 
     float ResolveAgentVisualScale()
     {
-        if (agentScale > 0.1f)
-            return agentScale;
-
-        if (useMazeBounds && TryGetMazeGenerator(out MazeGenerator generator))
-            return Mathf.Max(0.45f, generator.Config.cellSize * 0.18f);
-
-        return 0.7f;
+        TryGetMazeGenerator(out MazeGenerator generator);
+        return ExperimentAgentVisuals.ResolveSwarmSphereScale(generator, agentScale, agentCount);
     }
 
     SwarmFlightSettings BuildSettings()

@@ -51,14 +51,7 @@ public class MazeWallVisualizer : MonoBehaviour
         if (_sharedMaterial != null)
             return;
 
-        Shader shader = Shader.Find("Unlit/Color");
-        if (shader == null)
-            shader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null)
-            shader = Shader.Find("Standard");
-
-        _sharedMaterial = new Material(shader);
-        _sharedMaterial.color = wallColor;
+        _sharedMaterial = ExperimentAgentVisuals.CreateUnlitMaterial(wallColor, 2000);
     }
 
     public void Rebuild(IReadOnlyDictionary<string, MazeWall> walls, float cellSize = 5f)
