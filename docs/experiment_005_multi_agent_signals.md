@@ -75,7 +75,7 @@ Assets/Scripts/Experiments/Experiment005MetricsLogger.cs
 Assets/Editor/Experiment005RunnerEditor.cs
 ```
 
-Scene: `Experiment005Runner` on `MazeSystem` (disable `Experiment004Runner` when running EXP-005).
+Scene: `Assets/Scenes/EXP-005.unity` — `Experiment005Runner` on `MazeSystem` (disable `Experiment004Runner` when running EXP-005).
 
 ## 7. Acceptance Criteria
 

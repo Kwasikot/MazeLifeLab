@@ -10,6 +10,7 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Changed
 
+- Renamed `Assets/Scenes/SampleScene.unity` to `EXP-005.unity` (FrontierClaim preset); added `EXP-SWARM-005.unity` with `ExperimentSwarm004Runner` + trail ablation harness.
 - EXP-SWARM-005 journal report: embedded Inspector screenshot (`docs/journal/screenshots/scr1.png`) in `index.html` and markdown report via relative paths for offline/git-clone viewing.
 
 ### Added

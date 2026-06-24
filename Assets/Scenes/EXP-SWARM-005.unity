@@ -343,6 +343,8 @@ GameObject:
   - component: {fileID: 910000005}
   - component: {fileID: 910000006}
   - component: {fileID: 910000007}
+  - component: {fileID: 910000008}
+  - component: {fileID: 910000009}
   m_Layer: 0
   m_Name: MazeSystem
   m_TagString: Untagged
@@ -448,7 +450,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 910000001}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6887ccd46b8adce42beee73d4edf9baf, type: 3}
   m_Name: 
@@ -520,6 +522,142 @@ MonoBehaviour:
   metricsCsvRelativePath: results/experiment_006_swarm_rrt.csv
   drawLocalRrtTreeForFirstAgentOnly: 0
   followAgentOnStart: 1
+--- !u!114 &910000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16b7db0b5f494c06a5cfb1a84b2b21e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  seed: 42
+  agentCount: 96
+  maxSteps: 7000
+  autoStartOnPlay: 0
+  enableMetricsLogging: 1
+  metricsCsvRelativePath: results/experiment_swarm_004_foraging.csv
+  mazeGen: {fileID: 910000002}
+  useMazeBounds: 1
+  arenaCenter: {x: 0, y: 15, z: 0}
+  arenaSize: {x: 80, y: 30, z: 80}
+  mazeFlightMinHeight: 0.7
+  mazeFlightBandHeight: 1.4
+  agentScale: 0
+  coverageGridResolution: 20
+  drawArenaGizmos: 1
+  drawCoverageGizmos: 1
+  maxCoverageGizmos: 512
+  foodSiteCount: 5
+  foodUnitsPerSite: 24
+  foodPickupRadius: 4
+  foodDiscoveryRadius: 10
+  hiveRadius: 8
+  hiveVisualScale: 8
+  foodVisualScale: 1.4
+  foragingWeight: 18
+  explorationWeight: 8
+  explorationProbeDistance: 14
+  neighborRadius: 4
+  separationRadius: 0.9
+  maxSpeed: 10
+  maxForce: 24
+  separationWeight: 1.6
+  alignmentWeight: 0.7
+  cohesionWeight: 0.3
+  wanderWeight: 1.8
+  boundaryWeight: 4
+  boundaryMargin: 8
+  mazeWallAvoidanceDistance: 2.5
+  mazeWallAvoidanceWeight: 10
+  enableScentTrails: 0
+  scentWeight: 10
+  scentDecayPerStep: 0.985
+  scentMaxStrength: 12
+  returnTrailDeposit: 1.4
+  foodDiscoveryDeposit: 2.5
+--- !u!114 &910000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1157890ffb6cbdf4e8aa8beef7ffe9d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  foragingRunner: {fileID: 910000008}
+  mazeGen: {fileID: 910000002}
+  testSeeds:
+  - 42
+  - 137
+  logBatchRunsToCsv: 0
+  showOnScreenDisplay: 1
+  osdAnchor: 0
+  osdScreenMargin: 16
+  liveStatus:
+    isRunningBatch: 0
+    completedRuns: 0
+    totalRuns: 0
+    currentRunIndex: 0
+    currentSeed: 0
+    currentScentEnabled: 0
+    liveSteps: 0
+    liveFoodReturned: 0
+    liveFoodDiscovered: 0
+    liveScentSteps: 0
+    liveScentDeposits: 0
+    liveForagingEfficiency: 0
+    liveRevisitRatio: 0
+    partialWithoutTrails:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanScentDeposits: 0
+      meanScentInfluencedSteps: 0
+    partialWithTrails:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanScentDeposits: 0
+      meanScentInfluencedSteps: 0
+  lastReport:
+    isComplete: 0
+    verdict: 0
+    verdictSummary: 
+    withoutTrails:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanScentDeposits: 0
+      meanScentInfluencedSteps: 0
+    withTrails:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanScentDeposits: 0
+      meanScentInfluencedSteps: 0
+    foodReturnedDeltaPercent: 0
+    foragingEfficiencyDeltaPercent: 0
+    timeToFirstFoodDeltaPercent: 0
+    revisitRatioDeltaPercent: 0
+    metricsPassed: 0
+    metricsRequired: 0
+  lastWithoutTrails: []
+  lastWithTrails: []
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
