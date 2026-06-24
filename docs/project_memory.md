@@ -169,6 +169,8 @@ No CSV batch; watched color-coded territorial spread in Game view over time
 Screenshot: docs/journal/screenshots/scr2.png
 Journal: docs/journal/reports/2026-06-20_exp-005_frontier_claim_visual_observation.md
 Next: seeded CSV ablation vs None / Trail on same seeds
+Unity scenes: EXP-005 -> Assets/Scenes/EXP-005.unity (was SampleScene); EXP-SWARM-005 -> Assets/Scenes/EXP-SWARM-005.unity
+Journal build: python Tools/build_journal.py (source: docs/journal/reports/ + journal.manifest.json)
 ```
 
 # Pending Validation For EXP-SWARM-005

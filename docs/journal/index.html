@@ -86,11 +86,12 @@
       margin-bottom: 1rem;
     }
     .meta strong { color: var(--text); }
-    h3 {
-      font-size: 1rem;
-      margin: 1.25rem 0 0.5rem;
+    .report-body h2, .report-body h3, .report-body h4 {
       color: var(--text);
+      margin: 1.25rem 0 0.5rem;
     }
+    .report-body h2 { font-size: 1rem; }
+    .report-body h3 { font-size: 0.95rem; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -123,36 +124,38 @@
       font-weight: 700;
       margin: 0.5rem 0;
     }
-    .next-step {
-      background: #1e2d22;
-      border-left: 4px solid var(--pass);
-      padding: 0.75rem 1rem;
-      margin: 1rem 0;
-      border-radius: 0 6px 6px 0;
-    }
-    ul { padding-left: 1.2rem; }
-    li { margin: 0.35rem 0; }
-    footer {
-      text-align: center;
-      padding: 1.5rem 1rem 2rem;
-      font-size: 0.8rem;
+    .report-link {
+      font-size: 0.88rem;
       color: var(--muted);
+      margin-top: 1rem;
     }
-    figure {
-      margin: 1rem 0 1.25rem;
-    }
-    figure img {
+    .report-body img {
       display: block;
       max-width: 100%;
       height: auto;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: #0a0e14;
+      margin: 0.75rem 0;
     }
-    figcaption {
-      font-size: 0.85rem;
+    .report-body em {
       color: var(--muted);
-      margin-top: 0.4rem;
+      font-size: 0.9rem;
+    }
+    .report-body ul, .report-body ol { padding-left: 1.2rem; }
+    .report-body li { margin: 0.35rem 0; }
+    .report-body p { margin: 0.6rem 0; }
+    .report-body code {
+      background: #243044;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem 1rem 2rem;
+      font-size: 0.8rem;
+      color: var(--muted);
     }
     @media (min-width: 720px) {
       .layout { flex-direction: row; align-items: flex-start; }
@@ -175,7 +178,7 @@
 <body>
   <header>
     <h1>MazeLifeLab Experiment Journal</h1>
-    <p>Research results · mobile-friendly index</p>
+    <p>Research results · markdown source → HTML build · built from markdown</p>
   </header>
 
   <div class="layout">
@@ -183,78 +186,195 @@
       <details open>
         <summary>Reports</summary>
         <ul>
-          <li><a href="#exp-005-frontier-claim-visual-2026-06-20">2026-06-20 · EXP-005 Frontier Claim (visual)</a></li>
-          <li><a href="#exp-swarm-005-trail-ablation-2025-06-24">2025-06-24 · EXP-SWARM-005 Trail Ablation</a></li>
+          <li><a href="#unity-scenes">Unity scenes</a></li>
+          <li><a href="#exp-005-frontier-claim-visual-2026-06-20">2026-06-20 · EXP-005 Frontier Claim Visual Observation</a></li>
+          <li><a href="#exp-swarm-005-trail-ablation-2025-06-24">2025-06-24 · EXP-SWARM-005 Scent Trail Ablation</a></li>
         </ul>
       </details>
     </nav>
 
     <main>
+      <section id="unity-scenes">
+        <h2>Unity scenes</h2>
+        <p>Preset scenes under <code>Assets/Scenes/</code> (formerly a single <code>SampleScene.unity</code>).</p>
+        <table>
+          <tr><th>Scene</th><th>Experiment</th><th>Runners</th><th>Notes</th></tr>
+          <tr><td><code>Assets/Scenes/EXP-005.unity</code></td><td>EXP-005</td><td>Experiment005Runner (FrontierClaim, LocalRrt)</td><td>Renamed from <code>Assets/Scenes/SampleScene.unity</code></td></tr>
+          <tr><td><code>Assets/Scenes/EXP-SWARM-005.unity</code></td><td>EXP-SWARM-005</td><td>ExperimentSwarm004Runner + ExperimentSwarmTrailAblationHarness</td><td></td></tr>
+        </table>
+      </section>
       <section id="exp-005-frontier-claim-visual-2026-06-20">
         <h2>EXP-005 — Frontier Claim Visual Observation</h2>
         <div class="meta">
           <strong>Date:</strong> 2026-06-20 &nbsp;|&nbsp;
           <strong>ID:</strong> EXP-005 &nbsp;|&nbsp;
-          <strong>Status:</strong> qualitative visual observation — no quantitative batch
+          <strong>Status:</strong> Qualitative only — no CSV batch &nbsp;|&nbsp;
+          <strong>Scene:</strong> <code>Assets/Scenes/EXP-005.unity</code>
         </div>
-
-        <p><strong>Research question:</strong> Does <code>FrontierClaim</code> mode produce visibly distinct, slowly expanding exploration territories for multiple agents in the same maze?</p>
 
         <div class="verdict-obs">OBSERVATION ONLY — no CSV batch, no pass/fail verdict</div>
-
-        <h3>Screenshot — Game view (late episode)</h3>
-        <figure>
-          <img src="screenshots/scr2.png" alt="EXP-005 FrontierClaim mode — color-coded agent territories expanding through a green maze" loading="lazy" width="800" height="600">
-          <figcaption>Game view with <code>Experiment005Runner</code>, FrontierClaim, 10 agents, LocalRrt (2026-06-20). Source: <code>docs/journal/screenshots/scr2.png</code></figcaption>
-        </figure>
-
-        <h3>Active runner (from Inspector)</h3>
-        <ul>
-          <li>Runner: <code>Experiment005Runner</code> (enabled on MazeSystem)</li>
-          <li>Communication mode: <code>FrontierClaim</code></li>
-          <li>Algorithm: <code>LocalRrt</code></li>
-          <li>Agents: 10 · maze: 28×28</li>
-        </ul>
-
-        <h3>Configuration highlights</h3>
-        <table>
-          <tr><th>Parameter</th><th>Value</th></tr>
-          <tr><td>Frontier claim radius</td><td>10 cells</td></tr>
-          <tr><td>Frontier claim TTL</td><td>36 steps</td></tr>
-          <tr><td>Claim avoidance weight</td><td>10</td></tr>
-          <tr><td>Claim expansion weight</td><td>0.35</td></tr>
-          <tr><td>Signal decay per step</td><td>0.995</td></tr>
-          <tr><td>Signal follow chance</td><td>0.45</td></tr>
-          <tr><td>Signal crowding penalty</td><td>0.65</td></tr>
-        </table>
-
-        <h3>Metrics</h3>
-        <p><strong>None recorded.</strong> This session was evaluated by watching Play mode in real time. Live HUD counters (frontier conflicts, per-agent claim/trail hints) were visible but not saved. Formal logging via <code>Experiment005MetricsLogger</code> was not used for this observation run.</p>
-
-        <h3>Visual observations</h3>
-        <ul>
-          <li>Agents explore <strong>slowly</strong>, extending color-coded trails into unexplored corridors.</li>
-          <li>Each agent uses a <strong>distinct color</strong> (cyan, magenta, yellow, orange, etc.) so territories are easy to track on the maze floor.</li>
-          <li>Regions grow <strong>outward</strong> from stratified starts rather than collapsing into one local cluster.</li>
-          <li>Some <strong>overlap at junctions</strong> and non-zero frontier conflicts — expected when claim radii meet in narrow passages.</li>
-          <li>Goal marker visible near maze centre; this was a spread-dynamics check, not a timed success run.</li>
-        </ul>
-
-        <h3>Interpretation</h3>
-        <p>FrontierClaim produces <strong>readable territorial expansion</strong> worth measuring next. The screenshot does <strong>not</strong> prove coordination benefit over EXP-004 or other EXP-005 modes without seeded CSV comparison.</p>
-
-        <div class="next-step">
-          <strong>Recommended next step</strong>
-          <ol>
-            <li>Run seeded episodes (e.g. seed 42) for <code>None</code>, <code>Trail</code>, and <code>FrontierClaim</code> with CSV logging.</li>
-            <li>Compare coverage %, overlap %, claims, conflicts, and steps to first goal.</li>
-            <li>Capture matched-step screenshots for the journal.</li>
-          </ol>
+        <div class="report-body">
+<h2>1. Research Question</h2>
+<p>Does the <strong>FrontierClaim</strong> communication mode produce visibly distinct, slowly expanding exploration territories when multiple agents explore the same maze under partial observability?</p>
+<p>This session was <strong>not</strong> a controlled ablation. It was a live visual check of whether claim-guided agents spread outward from stratified starts instead of collapsing into one crowded region.</p>
+<hr />
+<h2>2. Protocol Summary</h2>
+<ol>
+<li>Open <strong><code>Assets/Scenes/EXP-005.unity</code></strong> (formerly <code>SampleScene.unity</code>).</li>
+<li>Enable <code>Experiment005Runner</code> on <code>MazeSystem</code>; disable competing experiment runners.</li>
+<li>Set <strong>Communication Mode</strong> to <code>FrontierClaim</code>, <strong>Algorithm</strong> to <code>LocalRrt</code>, <strong>Agent Count</strong> to 10.</li>
+<li>Enter Play mode and watch the Game view over time.</li>
+<li><strong>No CSV batch was run</strong> for this session; evaluation was by eye only.</li>
+<li>Capture one late-episode screenshot for the journal (<code>docs/journal/screenshots/scr2.png</code>).</li>
+</ol>
+<hr />
+<h2>3. Configuration</h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value (from screenshot / Inspector)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runner</td>
+<td><code>Experiment005Runner</code></td>
+</tr>
+<tr>
+<td>Communication mode</td>
+<td><code>FrontierClaim</code></td>
+</tr>
+<tr>
+<td>Algorithm</td>
+<td><code>LocalRrt</code></td>
+</tr>
+<tr>
+<td>Agent count</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Maze size</td>
+<td>28 × 28</td>
+</tr>
+<tr>
+<td>Frontier claim radius</td>
+<td>10 cells</td>
+</tr>
+<tr>
+<td>Frontier claim TTL</td>
+<td>36 steps</td>
+</tr>
+<tr>
+<td>Frontier claim avoidance weight</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Frontier claim expansion weight</td>
+<td>0.35</td>
+</tr>
+<tr>
+<td>Signal decay per step</td>
+<td>0.995</td>
+</tr>
+<tr>
+<td>Signal follow chance</td>
+<td>0.45</td>
+</tr>
+<tr>
+<td>Signal crowding penalty</td>
+<td>0.65</td>
+</tr>
+<tr>
+<td>Stigmergy field visible</td>
+<td>yes (<code>showStigmergyField</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Each agent is drawn with a <strong>distinct color</strong> (cyan, magenta, yellow, orange, and others from the runner palette). Deposited smell and visited trails tint the maze floor in that agent’s color, so territorial spread is readable at a glance.</p>
+<hr />
+<h2>4. Results</h2>
+<h3>Quantitative metrics</h3>
+<p><strong>None recorded for this session.</strong></p>
+<p><code>Experiment005MetricsLogger</code> exists and can write <code>results/experiment_005_multi_agent_signals.csv</code>, but this run was not logged as a formal episode batch. The bottom status bar showed live counters (e.g. frontier conflicts, per-agent claim/trail hints) during Play mode; those values were <strong>not</strong> saved or averaged.</p>
+<h3>Qualitative observations (visual, in dynamics)</h3>
+<p><img alt="Game view — multi-agent frontier claim exploration" src="screenshots/scr2.png" /></p>
+<p><em>Figure: Late-episode Game view (2026-06-20). Agents leave color-coded trails and claim regions on a 28×28 maze. Source: <code>docs/journal/screenshots/scr2.png</code></em></p>
+<p>Watching the simulation over time:</p>
+<ul>
+<li>Agents <strong>explore slowly</strong>, extending colored corridors and patches into unexplored green maze space rather than jumping instantly across the map.</li>
+<li><strong>Territories remain visually separable</strong>: cyan, magenta, yellow, and orange regions occupy different branches and wings of the maze, consistent with per-agent responsibility claims and avoidance of peers’ claimed frontiers.</li>
+<li>Expansion is <strong>gradual and outward</strong>: trails lengthen along corridors; local blobs are less dominant than in early FrontierClaim prototypes (smell deposited once per cell, farthest-tier frontier preference).</li>
+<li>A <strong>bright goal marker</strong> sits near the maze centre; at the time of the screenshot, exploration had not yet converged on a single team completion event (typical for a mid/late visual check, not a timed success run).</li>
+<li><strong>Overlap and conflict</strong> appear in places where corridors narrow or two agents approach the same junction — expected under claim radius overlap; the HUD reported non-zero frontier conflict activity during the session.</li>
+</ul>
+<p><strong>Informal takeaway:</strong> FrontierClaim produces <strong>readable, color-coded territorial expansion</strong> suitable for qualitative inspection. This does <strong>not</strong> prove coordination benefit over EXP-004 <code>None</code> or other EXP-005 modes without a seeded CSV comparison.</p>
+<hr />
+<h2>5. Interpretation</h2>
+<p>The run supports the <strong>visual design goal</strong> of EXP-005 FrontierClaim: multiple agents can co-explore one maze while leaving distinguishable, slowly growing regions. Claim refresh, stratified starts, and peer-avoidance appear to reduce the “single crowded blob near spawn” failure mode described in earlier project notes.</p>
+<p>Because no metrics were collected, we cannot say whether coverage, overlap, time-to-first-goal, or claim efficiency improved versus baselines. The session is evidence that the <strong>phenomenon is observable and worth measuring</strong>, not that FrontierClaim <strong>works</strong> in a scientific sense.</p>
+<hr />
+<h2>6. Limitations</h2>
+<ul>
+<li>Single anecdotal Play-mode session; no fixed seed documentation in this report.</li>
+<li>No CSV export, no repeat runs, no comparison to <code>None</code>, <code>Trail</code>, or EXP-004.</li>
+<li>Visual judgment only — easy to over-interpret pleasing color patterns as coordination.</li>
+<li>Screenshot is one time slice; dynamics mattered more than the still frame.</li>
+<li>Goal-reaching and team success were not validated quantitatively here.</li>
+</ul>
+<hr />
+<h2>7. Decision Gate</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reproducible?</td>
+<td>Partially — same runner/settings should reproduce similar visuals; seed not recorded for this entry.</td>
+</tr>
+<tr>
+<td>Metrics trustworthy?</td>
+<td>N/A — no metrics captured.</td>
+</tr>
+<tr>
+<td>Beats or clarifies baselines?</td>
+<td>Unknown — visual only.</td>
+</tr>
+<tr>
+<td>Failure modes understood?</td>
+<td>Partially — junction overlap and slow expansion observed; not counted.</td>
+</tr>
+<tr>
+<td>Next experiment justified?</td>
+<td>Yes — follow with seeded CSV runs across communication modes.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Decision:</strong> Treat as <strong>visual validation only</strong>. Proceed to quantitative EXP-005 ablation when ready; do not treat this screenshot as proof of coordination benefit.</p>
+<hr />
+<h2>8. Recommended Next Step</h2>
+<ol>
+<li>Run seeded episodes (e.g. seed 42) for <code>None</code>, <code>Trail</code>, and <code>FrontierClaim</code> with metrics logging enabled.</li>
+<li>Log team coverage %, overlap %, <code>frontier_claims_created</code>, <code>claim_conflicts</code>, and <code>steps_to_first_goal</code>.</li>
+<li>Capture paired screenshots at matched step counts for the journal.</li>
+<li>Compare against EXP-004 on the same seed before advancing to EXP-006.</li>
+</ol>
+<hr />
+<h2>9. Artifacts</h2>
+<ul>
+<li>Screenshot (2026-06-20): <code>docs/journal/screenshots/scr2.png</code></li>
+<li>Unity scene: <code>Assets/Scenes/EXP-005.unity</code></li>
+<li>Markdown: this file</li>
+<li>HTML: <a href="../index.html#exp-005-frontier-claim-visual-2026-06-20">../index.html#exp-005-frontier-claim-visual-2026-06-20</a></li>
+<li>Optional future CSV: <code>results/experiment_005_multi_agent_signals.csv</code> (not produced in this session)</li>
+</ul>
         </div>
-
-        <p>
-          <a href="reports/2026-06-20_exp-005_frontier_claim_visual_observation.md">Full markdown report</a>
-          · Protocol: <code>docs/experiment_005_multi_agent_signals.md</code>
+        <p class="report-link">
+          <a href="reports/2026-06-20_exp-005_frontier_claim_visual_observation.md">Source markdown</a>
         </p>
       </section>
 
@@ -263,80 +383,291 @@
         <div class="meta">
           <strong>Date:</strong> 2025-06-24 &nbsp;|&nbsp;
           <strong>ID:</strong> EXP-SWARM-005 &nbsp;|&nbsp;
-          <strong>Status:</strong> completed — negative result
+          <strong>Status:</strong> Negative result — trails not working &nbsp;|&nbsp;
+          <strong>Scene:</strong> <code>Assets/Scenes/EXP-SWARM-005.unity</code>
         </div>
-
-        <p><strong>Research question:</strong> Do decaying scent trails improve foraging vs the same swarm without trails?</p>
 
         <div class="verdict-fail">VERDICT: TRAILS NOT WORKING (0 / 2 primary metrics passed)</div>
-
-        <h3>Screenshot — Inspector verdict panel</h3>
-        <figure>
-          <img src="screenshots/scr1.png" alt="EXP-SWARM-005 trail ablation Inspector verdict panel showing TRAILS NOT WORKING" loading="lazy" width="800" height="600">
-          <figcaption>Unity Inspector after batch completion (2025-06-24). Source: <code>docs/journal/screenshots/scr1.png</code></figcaption>
-        </figure>
-
-        <h3>Protocol</h3>
-        <ul>
-          <li>Harness: <code>ExperimentSwarmTrailAblationHarness</code></li>
-          <li>Runner: <code>ExperimentSwarm004Runner</code></li>
-          <li>Seeds: 42, 137 — each with and without trails (4 runs)</li>
-          <li>Agents: 96 · max steps: 7000 · food target: 120</li>
-        </ul>
-
-        <h3>Results — without trails</h3>
-        <table>
-          <tr><th>Metric</th><th>Value</th></tr>
-          <tr><td>Runs</td><td>2</td></tr>
-          <tr><td>Mean food returned</td><td>37.0 / 120</td></tr>
-          <tr><td>Mean foraging efficiency</td><td>0.000055</td></tr>
-          <tr><td>Mean time to first food</td><td>863 steps</td></tr>
-          <tr><td>Mean revisit ratio</td><td>0.999</td></tr>
-          <tr><td>Per-run food</td><td>seed 42 = 49, seed 137 = 25</td></tr>
-        </table>
-
-        <h3>Results — with trails</h3>
-        <table>
-          <tr><th>Metric</th><th>Value</th></tr>
-          <tr><td>Runs</td><td>2</td></tr>
-          <tr><td>Mean food returned</td><td>31.5 / 120</td></tr>
-          <tr><td>Mean foraging efficiency</td><td>0.000047</td></tr>
-          <tr><td>Scent activity</td><td>deposits &amp; scent steps &gt; 0</td></tr>
-        </table>
-
-        <h3>Deltas (with vs without)</h3>
-        <table>
-          <tr><th>Metric</th><th>Change</th></tr>
-          <tr><td>Food returned</td><td>−14.9% (worse)</td></tr>
-          <tr><td>Foraging efficiency</td><td>−14.5% (worse)</td></tr>
-        </table>
-
-        <h3>Interpretation</h3>
-        <p>Scent trails were active but <strong>reduced</strong> food collection under the current rules. Likely causes: return-path deposits steer searchers toward the hive; scent weight too high; revisit ratio already ~0.999 without improvement. Only two seeds — treat as a first gate, not a final claim.</p>
-
-        <h3>Decision gate</h3>
-        <p><strong>Decision:</strong> Iterate EXP-SWARM-005. Do not advance to EXP-SWARM-006 yet.</p>
-
-        <div class="next-step">
-          <strong>Recommended next simulation step</strong>
-          <ol>
-            <li>Change deposits: strong at food discovery/pickup; weak or no continuous return-path deposit.</li>
-            <li>Lower <code>scentWeight</code> (e.g. 10 → 3–5).</li>
-            <li>Rerun the same 4-run batch (seeds 42, 137).</li>
-            <li>If still negative, add seeds 200 and 300 before abandoning trails.</li>
-          </ol>
+        <div class="report-body">
+<h2>1. Research Question</h2>
+<p>Do decaying scent trails improve bee-hive foraging compared to the same swarm without trails, as measured by food return, foraging efficiency, time to first food, and revisit ratio?</p>
+<hr />
+<h2>2. Protocol Summary</h2>
+<ol>
+<li>Open <strong><code>Assets/Scenes/EXP-SWARM-005.unity</code></strong>.</li>
+<li>Disable <code>Auto Start On Play</code> on the foraging runner.</li>
+<li>Confirm <code>ExperimentSwarmTrailAblationHarness</code> is on <code>MazeSystem</code>.</li>
+<li>Press <strong>Run All Tests</strong> in Play mode.</li>
+<li>Harness runs four episodes automatically:<br />
+   - seed 42, scent off<br />
+   - seed 42, scent on<br />
+   - seed 137, scent off<br />
+   - seed 137, scent on</li>
+<li><code>SwarmTrailAblationEvaluator</code> compares means and assigns verdict.</li>
+</ol>
+<p><strong>Pass criteria (automated):</strong></p>
+<ul>
+<li>Trail runs must show scent deposits and scent-influenced steps &gt; 0.</li>
+<li>At least <strong>2 of 3</strong> primary metrics must improve:</li>
+<li>mean food returned ≥ <strong>+5%</strong></li>
+<li>mean foraging efficiency ≥ <strong>+5%</strong></li>
+<li>mean time to first food ≥ <strong>+10%</strong> (lower is better)</li>
+<li>Mean revisit ratio must not worsen by more than <strong>+5%</strong>.</li>
+</ul>
+<hr />
+<h2>3. Configuration</h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent count</td>
+<td>96</td>
+</tr>
+<tr>
+<td>Max steps</td>
+<td>7000</td>
+</tr>
+<tr>
+<td>Food sites</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Food units per site</td>
+<td>24</td>
+</tr>
+<tr>
+<td>Total food target</td>
+<td>120 returns</td>
+</tr>
+<tr>
+<td>Test seeds</td>
+<td>42, 137</td>
+</tr>
+<tr>
+<td>Scent enabled runs</td>
+<td><code>enableScentTrails = true</code></td>
+</tr>
+<tr>
+<td>Default scent weight</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Return trail deposit</td>
+<td>1.4</td>
+</tr>
+<tr>
+<td>Food discovery deposit</td>
+<td>2.5</td>
+</tr>
+<tr>
+<td>Scent decay per step</td>
+<td>0.985</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Baseline context:</strong> EXP-SWARM-004 foraging was visually validated earlier (agents discover red food, return to blue hive).</p>
+<hr />
+<h2>4. Results</h2>
+<h3>Without trails (baseline)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Mean food returned</td>
+<td><strong>37.0</strong> / 120</td>
+</tr>
+<tr>
+<td>Mean foraging efficiency</td>
+<td><strong>0.000055</strong></td>
+</tr>
+<tr>
+<td>Mean time to first food</td>
+<td><strong>863</strong> steps</td>
+</tr>
+<tr>
+<td>Mean revisit ratio</td>
+<td><strong>0.999</strong></td>
+</tr>
+<tr>
+<td>Mean scent deposits</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>Mean scent-influenced steps</td>
+<td>0.0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Per-run food returned:</strong> seed 42 = <strong>49</strong>, seed 137 = <strong>25</strong></p>
+<p><strong>Per-run efficiency:</strong> seed 42 = <strong>0.000073</strong>, seed 137 = <strong>0.000037</strong></p>
+<h3>With trails (treatment)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Mean food returned</td>
+<td><strong>31.5</strong> / 120</td>
+</tr>
+<tr>
+<td>Mean foraging efficiency</td>
+<td><strong>0.000047</strong></td>
+</tr>
+<tr>
+<td>Mean scent deposits</td>
+<td>&gt; 0 (trails active)</td>
+</tr>
+<tr>
+<td>Mean scent-influenced steps</td>
+<td>&gt; 0 (trails active)</td>
+</tr>
+</tbody>
+</table>
+<p>Trails were <strong>biologically active</strong> in code (deposits and steering occurred) but <strong>underperformed</strong> the baseline on primary task metrics.</p>
+<h3>Deltas and verdict</h3>
+<table>
+<thead>
+<tr>
+<th>Delta (with vs without)</th>
+<th>Approx. change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Food returned</td>
+<td><strong>−14.9%</strong> (worse)</td>
+</tr>
+<tr>
+<td>Foraging efficiency</td>
+<td><strong>−14.5%</strong> (worse)</td>
+</tr>
+<tr>
+<td>Primary metrics passed</td>
+<td><strong>0 / 2</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Automated verdict:</strong> <code>TRAILS NOT WORKING</code></p>
+<p><strong>Summary:</strong> Scent trails with current deposit/follow rules <strong>reduced</strong> food collection and efficiency versus no trails. This is a valid negative ablation result, not an inconclusive run.</p>
+<p><img alt="Inspector verdict panel after batch completion" src="screenshots/scr1.png" /></p>
+<p><em>Figure: Unity Inspector — EXP-SWARM-005 batch verdict (2025-06-24). File: <code>docs/journal/screenshots/scr1.png</code></em></p>
+<hr />
+<h2>5. Interpretation</h2>
+<h3>What seems valid</h3>
+<ul>
+<li>Batch harness, live Inspector stats, and automated evaluator ran end-to-end.</li>
+<li>Baseline and treatment used identical seeds and episode caps.</li>
+<li>Scent mechanism activated in treatment runs (non-zero deposits and scent-influenced steps).</li>
+</ul>
+<h3>What is not proven</h3>
+<ul>
+<li>That scent trails can never help — only that <strong>this deposit model</strong> (continuous return-path deposit + gradient following for searchers) did not help.</li>
+<li>That results generalize beyond two seeds (high variance: 49 vs 25 without trails).</li>
+</ul>
+<h3>Likely failure modes</h3>
+<ol>
+<li><strong>Return-path deposits attract searchers toward the hive</strong>, not toward undiscovered food.</li>
+<li><strong>Scent weight too high</strong> — excessive scent-following reduced exploration and direct foraging bias.</li>
+<li><strong>Revisit ratio ~0.999 in both conditions</strong> — swarm already over-revisits; trails did not broaden search.</li>
+<li><strong>Small sample size</strong> — two seeds is enough for a first gate, not for a final scientific claim.</li>
+</ol>
+<hr />
+<h2>6. Limitations</h2>
+<ul>
+<li>Only <strong>2 seeds</strong> × <strong>2 conditions</strong> (4 episodes).</li>
+<li>Episodes may have timed out before collecting all 120 food units.</li>
+<li>No dedicated <code>ExperimentSwarm005Runner</code>; scent is toggled on <code>ExperimentSwarm004Runner</code>.</li>
+<li>Game view OSD may clip at some zoom levels; Inspector panel was used for final readings.</li>
+<li>Unity physics-time estimate ~4–6 minutes per full batch; wall-clock may differ under load.</li>
+</ul>
+<hr />
+<h2>7. Decision Gate</h2>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reproducible?</td>
+<td><strong>Partially</strong> — same seeds should rerun same layout; batch harness makes reruns easy.</td>
+</tr>
+<tr>
+<td>Metrics trustworthy?</td>
+<td><strong>Yes for relative comparison</strong> within this harness; absolute efficiency values are small decimals by design.</td>
+</tr>
+<tr>
+<td>Beats or clarifies baseline?</td>
+<td><strong>Clarifies baseline</strong> — trails hurt under current rules.</td>
+</tr>
+<tr>
+<td>Failure modes understood?</td>
+<td><strong>Partially</strong> — hive-biased trails and over-revisiting are plausible; needs code experiment.</td>
+</tr>
+<tr>
+<td>Next experiment justified?</td>
+<td><strong>Yes</strong> — revise trail semantics or tune parameters, then rerun ablation before EXP-SWARM-006.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Decision:</strong> <strong>Iterate EXP-SWARM-005</strong> (do not advance to threats/roles yet).</p>
+<hr />
+<h2>8. Recommended Next Step (Simulation)</h2>
+<p><strong>Primary (recommended):</strong> Fix trail semantics, then rerun the same 4-run batch.</p>
+<ol>
+<li><strong>Food-biased deposits:</strong> deposit strongly at food discovery/pickup; reduce or remove continuous return-path deposit.</li>
+<li><strong>Lower <code>scentWeight</code></strong> (e.g. 10 → 3–5) so foraging and exploration biases dominate.</li>
+<li><strong>Rerun</strong> <code>ExperimentSwarmTrailAblationHarness</code> with seeds 42 and 137.</li>
+<li>If still negative, add <strong>2 more seeds</strong> (e.g. 200, 300) before pivoting.</li>
+</ol>
+<p><strong>Secondary:</strong> Document tuned parameters in a follow-up journal entry <code>YYYY-MM-DD_exp-swarm-005_trail_ablation_retry.md</code>.</p>
+<p><strong>Do not start yet:</strong> EXP-SWARM-006 (Threat / Predator Response) until trail ablation either passes or is formally abandoned with documented reasoning.</p>
+<hr />
+<h2>9. Artifacts</h2>
+<ul>
+<li>Inspector verdict panel (screenshot, 2025-06-24): <code>docs/journal/screenshots/scr1.png</code></li>
+<li>Unity scene: <code>Assets/Scenes/EXP-SWARM-005.unity</code></li>
+<li>Optional CSV if <code>logBatchRunsToCsv</code> enabled on harness</li>
+<li>Markdown: this file</li>
+<li>HTML: <a href="../index.html#exp-swarm-005-trail-ablation-2025-06-24">../index.html#exp-swarm-005-trail-ablation-2025-06-24</a></li>
+</ul>
+<hr />
+<h2>Research Notes (short)</h2>
+<p>EXP-SWARM-005 batch ablation on 2025-06-24 found <strong>scent trails harmful</strong> under current rules (mean food 31.5 with trails vs 37.0 without). Verdict: <strong>TRAILS NOT WORKING</strong>. Next: food-biased pheromone deposit model and lower scent weight, then rerun ablation.</p>
         </div>
-
-        <p>
-          <a href="reports/2025-06-24_exp-swarm-005_trail_ablation.md">Full markdown report</a>
-          · Git: <code>f2c668a</code>
+        <p class="report-link">
+          <a href="reports/2025-06-24_exp-swarm-005_trail_ablation.md">Source markdown</a>
         </p>
       </section>
     </main>
   </div>
 
   <footer>
-    MazeLifeLab · docs/journal · update via .cursor/rules/experiment_journal.mdc
+    MazeLifeLab · docs/journal · source: journal.md + reports/ · rebuild: python Tools/build_journal.py
   </footer>
 </body>
 </html>

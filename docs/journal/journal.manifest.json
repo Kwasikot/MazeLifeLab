@@ -1,0 +1,49 @@
+{
+  "title": "MazeLifeLab Experiment Journal",
+  "subtitle": "Research results · markdown source → HTML build",
+  "scenes": [
+    {
+      "path": "Assets/Scenes/EXP-005.unity",
+      "formerly": "Assets/Scenes/SampleScene.unity",
+      "experiment": "EXP-005",
+      "description": "Multi-agent maze exploration with environmental signals (FrontierClaim preset used in the 2026-06-20 visual session).",
+      "runners": "Experiment005Runner (FrontierClaim, LocalRrt)"
+    },
+    {
+      "path": "Assets/Scenes/EXP-SWARM-005.unity",
+      "experiment": "EXP-SWARM-005",
+      "description": "Bee-hive foraging with optional scent trails and automated trail ablation harness.",
+      "runners": "ExperimentSwarm004Runner + ExperimentSwarmTrailAblationHarness"
+    }
+  ],
+  "reports": [
+    {
+      "file": "2026-06-20_exp-005_frontier_claim_visual_observation.md",
+      "section_id": "exp-005-frontier-claim-visual-2026-06-20",
+      "date": "2026-06-20",
+      "experiment_id": "EXP-005",
+      "title": "Frontier Claim Visual Observation",
+      "status": "Qualitative only — no CSV batch",
+      "unity_scene": "Assets/Scenes/EXP-005.unity",
+      "verdict": {
+        "class": "obs",
+        "label": "OBSERVATION ONLY — no CSV batch, no pass/fail verdict"
+      },
+      "sort_order": 1
+    },
+    {
+      "file": "2025-06-24_exp-swarm-005_trail_ablation.md",
+      "section_id": "exp-swarm-005-trail-ablation-2025-06-24",
+      "date": "2025-06-24",
+      "experiment_id": "EXP-SWARM-005",
+      "title": "Scent Trail Ablation",
+      "status": "Negative result — trails not working",
+      "unity_scene": "Assets/Scenes/EXP-SWARM-005.unity",
+      "verdict": {
+        "class": "fail",
+        "label": "VERDICT: TRAILS NOT WORKING (0 / 2 primary metrics passed)"
+      },
+      "sort_order": 2
+    }
+  ]
+}

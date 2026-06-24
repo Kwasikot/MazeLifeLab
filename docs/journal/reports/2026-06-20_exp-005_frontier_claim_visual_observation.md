@@ -6,7 +6,7 @@
 - **Runner / harness:** `Experiment005Runner` on `MazeSystem` (no batch harness)
 - **Seeds / conditions:** single Play-mode session; maze generated in scene (28×28 visible in Inspector)
 - **Related code:** `Experiment005Runner`, `MazeFrontierClaimField`, `AgentStigmergyController`, `MazeStigmergyVisualizer`, `LocalRrtAgent`
-- **Unity scene:** `MazeSystem` with `Experiment 005 Runner` enabled; other experiment runners disabled
+- **Unity scene:** `Assets/Scenes/EXP-005.unity` (renamed from `Assets/Scenes/SampleScene.unity`) — `Experiment005Runner` on `MazeSystem`; other experiment runners disabled
 - **Protocol doc:** `docs/experiment_005_multi_agent_signals.md`
 
 ---
@@ -21,11 +21,12 @@ This session was **not** a controlled ablation. It was a live visual check of wh
 
 ## 2. Protocol Summary
 
-1. Enable `Experiment005Runner` on `MazeSystem`; disable competing experiment runners.
-2. Set **Communication Mode** to `FrontierClaim`, **Algorithm** to `LocalRrt`, **Agent Count** to 10.
-3. Enter Play mode and watch the Game view over time.
-4. **No CSV batch was run** for this session; evaluation was by eye only.
-5. Capture one late-episode screenshot for the journal (`docs/journal/screenshots/scr2.png`).
+1. Open **`Assets/Scenes/EXP-005.unity`** (formerly `SampleScene.unity`).
+2. Enable `Experiment005Runner` on `MazeSystem`; disable competing experiment runners.
+3. Set **Communication Mode** to `FrontierClaim`, **Algorithm** to `LocalRrt`, **Agent Count** to 10.
+4. Enter Play mode and watch the Game view over time.
+5. **No CSV batch was run** for this session; evaluation was by eye only.
+6. Capture one late-episode screenshot for the journal (`docs/journal/screenshots/scr2.png`).
 
 ---
 
@@ -121,6 +122,7 @@ Because no metrics were collected, we cannot say whether coverage, overlap, time
 ## 9. Artifacts
 
 - Screenshot (2026-06-20): `docs/journal/screenshots/scr2.png`
+- Unity scene: `Assets/Scenes/EXP-005.unity`
 - Markdown: this file
 - HTML: [../index.html#exp-005-frontier-claim-visual-2026-06-20](../index.html#exp-005-frontier-claim-visual-2026-06-20)
 - Optional future CSV: `results/experiment_005_multi_agent_signals.csv` (not produced in this session)

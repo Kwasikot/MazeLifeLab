@@ -6,7 +6,7 @@
 - **Runner / harness:** `ExperimentSwarm004Runner` + `ExperimentSwarmTrailAblationHarness`
 - **Seeds / conditions:** seeds `42`, `137` × conditions `without trails`, `with trails` (4 runs total)
 - **Related code:** `SwarmScentField`, `SwarmTrailAblationEvaluator`, `ExperimentSwarmTrailAblationHarness`
-- **Unity scene:** MazeSystem with `ExperimentSwarm004Runner`, harness, `MazeGen`
+- **Unity scene:** `Assets/Scenes/EXP-SWARM-005.unity` — `ExperimentSwarm004Runner`, `ExperimentSwarmTrailAblationHarness`, `MazeGen` on `MazeSystem`
 - **Git reference:** `f2c668a` (harness and evaluator on `main`)
 
 ---
@@ -19,15 +19,16 @@ Do decaying scent trails improve bee-hive foraging compared to the same swarm wi
 
 ## 2. Protocol Summary
 
-1. Disable `Auto Start On Play` on the foraging runner.
-2. Attach `ExperimentSwarmTrailAblationHarness` to MazeSystem.
-3. Press **Run All Tests** in Play mode.
-4. Harness runs four episodes automatically:
+1. Open **`Assets/Scenes/EXP-SWARM-005.unity`**.
+2. Disable `Auto Start On Play` on the foraging runner.
+3. Confirm `ExperimentSwarmTrailAblationHarness` is on `MazeSystem`.
+4. Press **Run All Tests** in Play mode.
+5. Harness runs four episodes automatically:
    - seed 42, scent off
    - seed 42, scent on
    - seed 137, scent off
    - seed 137, scent on
-5. `SwarmTrailAblationEvaluator` compares means and assigns verdict.
+6. `SwarmTrailAblationEvaluator` compares means and assigns verdict.
 
 **Pass criteria (automated):**
 
@@ -172,6 +173,7 @@ Trails were **biologically active** in code (deposits and steering occurred) but
 ## 9. Artifacts
 
 - Inspector verdict panel (screenshot, 2025-06-24): `docs/journal/screenshots/scr1.png`
+- Unity scene: `Assets/Scenes/EXP-SWARM-005.unity`
 - Optional CSV if `logBatchRunsToCsv` enabled on harness
 - Markdown: this file
 - HTML: [../index.html#exp-swarm-005-trail-ablation-2025-06-24](../index.html#exp-swarm-005-trail-ablation-2025-06-24)
