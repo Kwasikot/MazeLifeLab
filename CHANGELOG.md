@@ -14,6 +14,8 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- Journal entry for EXP-005 FrontierClaim visual observation (2026-06-20): qualitative Play-mode report with `docs/journal/screenshots/scr2.png`; no CSV metrics — territorial spread assessed visually with per-agent color trails.
+
 - Added experiment results journal:
   - `docs/journal/` with markdown reports, `index.md`, and mobile-friendly `index.html`
   - `.cursor/rules/experiment_journal.mdc` (report format and update checklist)

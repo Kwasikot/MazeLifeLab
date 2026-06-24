@@ -161,6 +161,16 @@ Journal: docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md
 HTML index: docs/journal/index.html
 ```
 
+# Journal Record For EXP-005 (2026-06-20)
+
+```text
+Qualitative Play-mode visual observation — FrontierClaim, 10 agents, LocalRrt, 28×28 maze
+No CSV batch; watched color-coded territorial spread in Game view over time
+Screenshot: docs/journal/screenshots/scr2.png
+Journal: docs/journal/reports/2026-06-20_exp-005_frontier_claim_visual_observation.md
+Next: seeded CSV ablation vs None / Trail on same seeds
+```
+
 # Pending Validation For EXP-SWARM-005
 
 ```text
