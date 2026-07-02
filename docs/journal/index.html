@@ -189,6 +189,7 @@
           <li><a href="#unity-scenes">Unity scenes</a></li>
           <li><a href="#exp-005-frontier-claim-visual-2026-06-20">2026-06-20 · EXP-005 Frontier Claim Visual Observation</a></li>
           <li><a href="#exp-swarm-005-trail-ablation-2025-06-24">2025-06-24 · EXP-SWARM-005 Scent Trail Ablation</a></li>
+          <li><a href="#exp-swarm-005b-coordination-ablation-2026-06-24">2026-06-24 · EXP-SWARM-005b Food Coordination Ablation</a></li>
         </ul>
       </details>
     </nav>
@@ -200,7 +201,7 @@
         <table>
           <tr><th>Scene</th><th>Experiment</th><th>Runners</th><th>Notes</th></tr>
           <tr><td><code>Assets/Scenes/EXP-005.unity</code></td><td>EXP-005</td><td>Experiment005Runner (FrontierClaim, LocalRrt)</td><td>Renamed from <code>Assets/Scenes/SampleScene.unity</code></td></tr>
-          <tr><td><code>Assets/Scenes/EXP-SWARM-005.unity</code></td><td>EXP-SWARM-005</td><td>ExperimentSwarm004Runner + ExperimentSwarmTrailAblationHarness</td><td></td></tr>
+          <tr><td><code>Assets/Scenes/EXP-SWARM-005.unity</code></td><td>EXP-SWARM-005 / EXP-SWARM-005b</td><td>ExperimentSwarm004Runner + ExperimentSwarmCoordinationAblationHarness</td><td></td></tr>
         </table>
       </section>
       <section id="exp-005-frontier-claim-visual-2026-06-20">
@@ -661,6 +662,324 @@
         </div>
         <p class="report-link">
           <a href="reports/2025-06-24_exp-swarm-005_trail_ablation.md">Source markdown</a>
+        </p>
+      </section>
+
+      <section id="exp-swarm-005b-coordination-ablation-2026-06-24">
+        <h2>EXP-SWARM-005b — Food Coordination Ablation</h2>
+        <div class="meta">
+          <strong>Date:</strong> 2026-06-24 &nbsp;|&nbsp;
+          <strong>ID:</strong> EXP-SWARM-005b &nbsp;|&nbsp;
+          <strong>Status:</strong> Positive result — coordination working &nbsp;|&nbsp;
+          <strong>Scene:</strong> <code>Assets/Scenes/EXP-SWARM-005.unity</code>
+        </div>
+
+        <div class="verdict-pass">VERDICT: COORDINATION WORKING (2 / 2 primary metrics, HiveBulletin best)</div>
+        <div class="report-body">
+<h2>1. Research Question</h2>
+<p>Does <strong>explicit food coordination</strong> (hive bulletin, local broadcast, global oracle) improve bee-hive foraging versus independent searchers, with scent <strong>gradient following</strong> disabled?</p>
+<hr />
+<h2>2. Protocol Summary</h2>
+<ol>
+<li>Open <strong><code>Assets/Scenes/EXP-SWARM-005.unity</code></strong>.</li>
+<li>Disable <code>Auto Start On Play</code> on the foraging runner.</li>
+<li>Confirm <code>ExperimentSwarmCoordinationAblationHarness</code> is enabled on <code>MazeSystem</code>.</li>
+<li>Press <strong>Run All Tests</strong> in Play mode.</li>
+<li>Harness runs eight episodes automatically (per seed: None → HiveBulletin → LocalBroadcast → GlobalBroadcast).</li>
+<li><code>SwarmFoodCoordinationEvaluator</code> compares each treatment mean vs <strong>None</strong> and assigns verdict.</li>
+</ol>
+<p><strong>Pass criteria (automated):</strong></p>
+<ul>
+<li>Non-None modes must show <code>coordination_influenced_steps</code> &gt; 0.</li>
+<li>At least <strong>2 of 3</strong> primary metrics must improve vs None:</li>
+<li>mean food returned ≥ <strong>+5%</strong></li>
+<li>mean foraging efficiency ≥ <strong>+5%</strong></li>
+<li>mean time to first food ≥ <strong>+10%</strong> (lower is better)</li>
+<li>Mean revisit ratio must not worsen by more than <strong>+5%</strong>.</li>
+</ul>
+<hr />
+<h2>3. Configuration</h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent count</td>
+<td>96</td>
+</tr>
+<tr>
+<td>Max steps</td>
+<td>7000</td>
+</tr>
+<tr>
+<td>Food sites</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Food units per site</td>
+<td>24</td>
+</tr>
+<tr>
+<td>Total food target</td>
+<td>120 returns</td>
+</tr>
+<tr>
+<td>Test seeds</td>
+<td>42, 137</td>
+</tr>
+<tr>
+<td>Scent trails</td>
+<td><strong>off</strong> (<code>enableScentTrails = false</code>)</td>
+</tr>
+<tr>
+<td>Coordination modes</td>
+<td>None, HiveBulletin, LocalBroadcast, GlobalBroadcast</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Results</h2>
+<h3>None (baseline)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Mean food returned</td>
+<td><strong>37.0</strong> / 120</td>
+</tr>
+<tr>
+<td>Mean foraging efficiency</td>
+<td><strong>0.000055</strong></td>
+</tr>
+<tr>
+<td>Mean coordination-influenced steps</td>
+<td><strong>0.0</strong></td>
+</tr>
+<tr>
+<td>Mean signals emitted</td>
+<td><strong>0.0</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Per-run food returned:</strong> seed 42 = <strong>49</strong>, seed 137 = <strong>25</strong></p>
+<h3>HiveBulletin (best mode)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Mean food returned</td>
+<td><strong>105.0</strong> / 120</td>
+</tr>
+<tr>
+<td>Mean foraging efficiency</td>
+<td><strong>0.000196</strong></td>
+</tr>
+<tr>
+<td>Mean coordination-influenced steps</td>
+<td><strong>196,811.0</strong></td>
+</tr>
+<tr>
+<td>Mean signals emitted</td>
+<td><strong>117.0</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Per-run food returned:</strong> seed 42 = <strong>120</strong>, seed 137 = <strong>90</strong></p>
+<h3>LocalBroadcast</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Mean food returned</td>
+<td><strong>61.5</strong> / 120</td>
+</tr>
+<tr>
+<td>Mean foraging efficiency</td>
+<td><strong>0.000092</strong></td>
+</tr>
+<tr>
+<td>Mean coordination-influenced steps</td>
+<td><strong>10,821.5</strong></td>
+</tr>
+<tr>
+<td>Mean signals emitted</td>
+<td><strong>72.5</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Per-run food returned:</strong> seed 42 = <strong>79</strong>, seed 137 = <strong>44</strong></p>
+<h3>GlobalBroadcast (oracle)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Mean food returned</td>
+<td><em>(panel partially clipped in screenshot)</em></td>
+</tr>
+<tr>
+<td>Console (last run, seed 137)</td>
+<td>foodReturned=<strong>90</strong>, efficiency=<strong>0.000134</strong>, coordSteps=<strong>229,694</strong>, signals=<strong>104</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Global oracle likely performs in the same ballpark as HiveBulletin on these seeds; Inspector panel was clipped at the bottom of the capture. Console confirms coordination was highly active on the final run.</p>
+<h3>Deltas vs None (HiveBulletin)</h3>
+<table>
+<thead>
+<tr>
+<th>Delta</th>
+<th>Approx. change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Food returned</td>
+<td><strong>+183.8%</strong></td>
+</tr>
+<tr>
+<td>Foraging efficiency</td>
+<td><strong>+256.4%</strong></td>
+</tr>
+<tr>
+<td>Primary metrics passed</td>
+<td><strong>2 / 2</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Automated verdict:</strong> <code>COORDINATION WORKING</code></p>
+<p><strong>Summary:</strong> Hive bulletin improved <strong>2/2</strong> primary metrics vs independent searchers. Local broadcast also passed thresholds on food and efficiency (+66% food) but <strong>underperformed hive bulletin</strong> on both seeds.</p>
+<p><img alt="Inspector verdict panel after batch completion" src="screenshots/scr3.png" /></p>
+<p><em>Figure: Unity Inspector — EXP-SWARM-005b batch verdict (2026-06-24). File: <code>docs/journal/screenshots/scr3.png</code></em></p>
+<hr />
+<h2>5. Interpretation</h2>
+<h3>What seems valid</h3>
+<ul>
+<li>Batch harness, live Inspector stats, and automated evaluator ran end-to-end across <strong>8 runs</strong>.</li>
+<li>Coordination mechanism was <strong>active</strong> in all non-None modes (large <code>coordination_influenced_steps</code> counts).</li>
+<li><strong>Hive bulletin</strong> dramatically raised food return on <strong>both</strong> seeds (49→120, 25→90).</li>
+<li>Result directionally <strong>opposes</strong> EXP-SWARM-005 scent trails (trails hurt; explicit signals help).</li>
+</ul>
+<h3>What is not yet proven</h3>
+<ul>
+<li>Generalization beyond two seeds (high baseline variance: 49 vs 25 without coordination).</li>
+<li>That <strong>local broadcast</strong> cannot match hive bulletin after radius / weight tuning.</li>
+<li>Whether <strong>global oracle</strong> exceeds hive bulletin — panel was clipped; evaluator tie-break favours first mode with equal pass count (HiveBulletin evaluated before GlobalBroadcast).</li>
+<li>Optimal <code>coordinationWeight</code>, TTL, and crowding penalties.</li>
+</ul>
+<h3>Likely explanations</h3>
+<ol>
+<li><strong>Discrete food-site coordinates</strong> match the foraging task better than continuous hive-biased scent gradients.</li>
+<li><strong>Hive bulletin</strong> gives all searchers persistent, fresh targets without requiring agents to be in broadcast range.</li>
+<li><strong>Local broadcast</strong> may lose signal propagation in a large maze — fewer agents receive leads early in the episode.</li>
+<li>High coordination step counts suggest steering bias is strong; tuning may trade exploration for exploitation.</li>
+</ol>
+<hr />
+<h2>6. Limitations</h2>
+<ul>
+<li>Only <strong>2 seeds</strong> × <strong>4 modes</strong> (8 episodes).</li>
+<li>No CSV file saved (<code>logBatchRunsToCsv</code> was off); metrics taken from Inspector + Console.</li>
+<li>GlobalBroadcast mean row incomplete in screenshot.</li>
+<li>Episodes may time out before all 120 food units are collected.</li>
+<li>Evaluator does not break ties by higher food delta when pass counts are equal.</li>
+</ul>
+<hr />
+<h2>7. Decision Gate</h2>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reproducible?</td>
+<td><strong>Partially</strong> — same seeds should rerun same layout; batch harness makes reruns easy.</td>
+</tr>
+<tr>
+<td>Metrics trustworthy?</td>
+<td><strong>Yes for relative comparison</strong> within this harness.</td>
+</tr>
+<tr>
+<td>Beats or clarifies baseline?</td>
+<td><strong>Beats baseline</strong> — hive bulletin ~2.8× mean food vs None.</td>
+</tr>
+<tr>
+<td>Failure modes understood?</td>
+<td><strong>Partially</strong> — local broadcast weaker than hive; global ceiling not fully logged.</td>
+</tr>
+<tr>
+<td>Next experiment justified?</td>
+<td><strong>Yes</strong> — validate on more seeds and tune local broadcast before EXP-SWARM-006.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Decision:</strong> <strong>Accept EXP-SWARM-005b Phase 1 gate</strong> — explicit hive bulletin coordination works under current rules. <strong>Do not</strong> resume scent gradient following as primary mechanism.</p>
+<hr />
+<h2>8. Recommended Next Step (Simulation)</h2>
+<p><strong>Primary (recommended):</strong> Confirm robustness, then tune local mode.</p>
+<ol>
+<li><strong>Rerun with CSV logging</strong> — enable <code>logBatchRunsToCsv</code> on harness; archive <code>results/experiment_swarm_005b_food_coordination.csv</code>.</li>
+<li><strong>Add seeds 200, 300</strong> (4 seeds × 4 modes = 16 runs) before claiming general improvement.</li>
+<li><strong>Tune LocalBroadcast</strong> — try larger <code>broadcastRadius</code> and/or higher pickup signal weight; compare again vs HiveBulletin.</li>
+<li><strong>Document GlobalBroadcast</strong> means in a follow-up run if oracle ceiling matters for agenda planning.</li>
+</ol>
+<p><strong>Secondary:</strong> Consider EXP-SWARM-005c (deferred “quantum sensing” sketch) only after local vs hive gap is understood.</p>
+<p><strong>Do not start yet:</strong> EXP-SWARM-006 (Threat / Predator Response) until coordination gains are confirmed on ≥4 seeds.</p>
+<hr />
+<h2>9. Artifacts</h2>
+<ul>
+<li>Inspector verdict panel (screenshot, 2026-06-24): <code>docs/journal/screenshots/scr3.png</code></li>
+<li>Unity scene: <code>Assets/Scenes/EXP-SWARM-005.unity</code></li>
+<li>Markdown: this file</li>
+<li>HTML: <a href="../index.html#exp-swarm-005b-coordination-ablation-2026-06-24">../index.html#exp-swarm-005b-coordination-ablation-2026-06-24</a></li>
+</ul>
+<hr />
+<h2>Research Notes (short)</h2>
+<p>EXP-SWARM-005b batch ablation on 2026-06-24 found <strong>explicit food coordination helpful</strong>: HiveBulletin mean food <strong>105.0</strong> vs None <strong>37.0</strong> (+184%). Verdict: <strong>COORDINATION WORKING</strong>. Local broadcast helped (+66% food) but less than hive bulletin. Next: more seeds, CSV logging, local broadcast tuning.</p>
+        </div>
+        <p class="report-link">
+          <a href="reports/2026-06-24_exp-swarm-005b_coordination_ablation.md">Source markdown</a>
         </p>
       </section>
     </main>

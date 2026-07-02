@@ -9,6 +9,7 @@ public struct SwarmFlightSettings
     public ISwarmExplorationField ExplorationField;
     public ISwarmForagingField ForagingField;
     public ISwarmScentField ScentField;
+    public ISwarmFoodCoordinationField CoordinationField;
     public float NeighborRadius;
     public float SeparationRadius;
     public float MaxSpeed;
@@ -28,6 +29,16 @@ public struct SwarmFlightSettings
     public float ExplorationWeight;
     public float ForagingWeight;
     public float ScentWeight;
+    public float CoordinationWeight;
+}
+
+public interface ISwarmFoodCoordinationField
+{
+    bool TrySampleCoordinationDirection(
+        int agentIndex,
+        Vector3 position,
+        Vector3 velocity,
+        out Vector3 direction);
 }
 
 public struct SwarmFlightObstacle
@@ -95,6 +106,9 @@ public class SwarmFlightAgent : MonoBehaviour
     public int ExplorationBiasSteps { get; private set; }
     public bool LastUsedScentBias { get; private set; }
     public int ScentBiasSteps { get; private set; }
+    public bool LastUsedCoordinationBias { get; private set; }
+    public int CoordinationBiasSteps { get; private set; }
+    public int LastCoordinationFoodTarget { get; private set; } = -1;
 
     public void BeginEpisode(int agentIndex, Vector3 initialVelocity)
     {
@@ -105,6 +119,9 @@ public class SwarmFlightAgent : MonoBehaviour
         ExplorationBiasSteps = 0;
         LastUsedScentBias = false;
         ScentBiasSteps = 0;
+        LastUsedCoordinationBias = false;
+        CoordinationBiasSteps = 0;
+        LastCoordinationFoodTarget = -1;
         _enabled = true;
         OrientToVelocity();
     }
@@ -125,6 +142,8 @@ public class SwarmFlightAgent : MonoBehaviour
 
         LastUsedExplorationBias = false;
         LastUsedScentBias = false;
+        LastUsedCoordinationBias = false;
+        LastCoordinationFoodTarget = -1;
         Vector3 steering =
             ComputeSeparation(agents, settings) * settings.SeparationWeight +
             ComputeAlignment(agents, settings) * settings.AlignmentWeight +
@@ -135,7 +154,8 @@ public class SwarmFlightAgent : MonoBehaviour
             ComputeObstacleAvoidance(settings) * settings.ObstacleAvoidanceWeight +
             ComputeExplorationBias(settings) * settings.ExplorationWeight +
             ComputeForagingBias(settings) * settings.ForagingWeight +
-            ComputeScentBias(settings) * settings.ScentWeight;
+            ComputeScentBias(settings) * settings.ScentWeight +
+            ComputeCoordinationBias(settings) * settings.CoordinationWeight;
 
         steering = Vector3.ClampMagnitude(steering, settings.MaxForce);
         _velocity = Vector3.ClampMagnitude(_velocity + steering * deltaTime, settings.MaxSpeed);
@@ -361,6 +381,30 @@ public class SwarmFlightAgent : MonoBehaviour
         LastUsedScentBias = true;
         ScentBiasSteps++;
         return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.zero;
+    }
+
+    Vector3 ComputeCoordinationBias(SwarmFlightSettings settings)
+    {
+        if (settings.CoordinationField == null || settings.CoordinationWeight <= 0f)
+            return Vector3.zero;
+
+        if (!settings.CoordinationField.TrySampleCoordinationDirection(
+                AgentIndex,
+                transform.position,
+                _velocity,
+                out Vector3 direction))
+        {
+            return Vector3.zero;
+        }
+
+        LastUsedCoordinationBias = true;
+        CoordinationBiasSteps++;
+        return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector3.zero;
+    }
+
+    public void SetLastCoordinationFoodTarget(int foodSiteIndex)
+    {
+        LastCoordinationFoodTarget = foodSiteIndex;
     }
 
     static Vector3 ObstacleAvoidanceDirection(

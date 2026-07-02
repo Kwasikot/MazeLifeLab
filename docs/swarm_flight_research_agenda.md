@@ -270,6 +270,18 @@ Purpose:
 - test whether decaying cues improve foraging and collective search;
 - measure signal usage, trail formation, redundancy, and resource return.
 
+**Status (2025-06-24):** gradient-following trails **failed** ablation. Active follow-up is **EXP-SWARM-005b** — explicit food coordination without scent gradients. See [`docs/experiment_swarm_005b_food_coordination.md`](experiment_swarm_005b_food_coordination.md).
+
+### EXP-SWARM-005b - Food Coordination (Hive Bulletin / Local Broadcast)
+
+Purpose:
+
+- replace scent gradient following with discrete food-location signals;
+- ablate Independent vs Hive bulletin vs Local broadcast vs Global oracle;
+- measure whether explicit coordination improves food return on the same foraging baseline.
+
+Primary document: [`docs/experiment_swarm_005b_food_coordination.md`](experiment_swarm_005b_food_coordination.md).
+
 ### EXP-SWARM-006 - Threat / Predator Response
 
 Purpose:

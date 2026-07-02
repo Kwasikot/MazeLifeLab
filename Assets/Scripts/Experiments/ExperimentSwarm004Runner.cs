@@ -9,7 +9,11 @@ public enum SwarmForagingAgentState
 }
 
 [DefaultExecutionOrder(150)]
-public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, ISwarmForagingField, ISwarmScentField
+public class ExperimentSwarm004Runner : MonoBehaviour,
+    ISwarmExplorationField,
+    ISwarmForagingField,
+    ISwarmScentField,
+    ISwarmFoodCoordinationField
 {
     static readonly Color SearchingColor = new Color(1f, 0.85f, 0.2f);
     static readonly Color HiveColor = new Color(0.15f, 0.45f, 1f);
@@ -87,13 +91,20 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
     [SerializeField] float mazeWallAvoidanceDistance = 2.5f;
     [SerializeField] float mazeWallAvoidanceWeight = 10f;
 
-    [Header("EXP-SWARM-005 Scent Trails")]
+    [Header("EXP-SWARM-005 Scent Trails (legacy)")]
     [SerializeField] bool enableScentTrails;
     [SerializeField] float scentWeight = 10f;
     [SerializeField] float scentDecayPerStep = 0.985f;
     [SerializeField] float scentMaxStrength = 12f;
     [SerializeField] float returnTrailDeposit = 1.4f;
     [SerializeField] float foodDiscoveryDeposit = 2.5f;
+
+    [Header("EXP-SWARM-005b Food Coordination")]
+    [SerializeField] SwarmFoodCoordinationMode coordinationMode;
+    [SerializeField] float coordinationWeight = 12f;
+    [SerializeField] float broadcastRadius = 35f;
+    [SerializeField] int signalTtlSteps = 400;
+    [SerializeField] string coordinationMetricsCsvRelativePath = "results/experiment_swarm_005b_food_coordination.csv";
 
     readonly List<AgentRuntime> _agents = new List<AgentRuntime>();
     readonly List<FoodSite> _foodSites = new List<FoodSite>();
@@ -116,6 +127,12 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
     bool _isRunning;
     SwarmScentField _scentField;
     int _scentInfluencedSteps;
+    SwarmFoodCoordinationSystem _coordinationSystem;
+    int _coordinationInfluencedSteps;
+    int _duplicateTargetAgentsPeak;
+    readonly List<Vector3> _agentPositionBuffer = new List<Vector3>();
+    ExperimentSwarm005bMetricsLogger _coordinationMetricsLogger;
+    bool _logCoordinationMetrics;
     SwarmForagingEpisodeSnapshot _lastSnapshot;
     bool _suppressMetricsLogging;
 
@@ -138,6 +155,12 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
     }
     public int ScentDeposits => _scentField != null ? _scentField.TotalDeposits : 0;
     public int ScentInfluencedSteps => _scentInfluencedSteps;
+    public SwarmFoodCoordinationMode CoordinationMode => coordinationMode;
+    public int SignalsEmitted => _coordinationSystem != null ? _coordinationSystem.SignalsEmitted : 0;
+    public int SignalsReceived => _coordinationSystem != null ? _coordinationSystem.SignalsReceived : 0;
+    public int CoordinationInfluencedSteps => _coordinationInfluencedSteps;
+    public int StaleSignalRejects => _coordinationSystem != null ? _coordinationSystem.StaleSignalRejects : 0;
+    public int DuplicateTargetAgentsPeak => _duplicateTargetAgentsPeak;
     public SwarmForagingEpisodeSnapshot LastEpisodeSnapshot => _lastSnapshot;
     public bool AutoStartOnPlay
     {
@@ -151,6 +174,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             mazeGen = GetComponent<MazeGen>();
 
         _metricsLogger = new ExperimentSwarm004MetricsLogger(metricsCsvRelativePath, enableMetricsLogging);
+        _coordinationMetricsLogger = new ExperimentSwarm005bMetricsLogger(coordinationMetricsCsvRelativePath, false);
         ExperimentRunnerExclusivity.ActivateExclusive(this);
     }
 
@@ -190,6 +214,9 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         scentMaxStrength = Mathf.Max(0.5f, scentMaxStrength);
         returnTrailDeposit = Mathf.Max(0f, returnTrailDeposit);
         foodDiscoveryDeposit = Mathf.Max(0f, foodDiscoveryDeposit);
+        coordinationWeight = Mathf.Max(0f, coordinationWeight);
+        broadcastRadius = Mathf.Max(1f, broadcastRadius);
+        signalTtlSteps = Mathf.Max(1, signalTtlSteps);
     }
 
     void OnEnable()
@@ -215,6 +242,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
 
         UpdateForagingState();
         UpdateScentField();
+        UpdateCoordinationMetrics();
         TrackCoverage();
         _steps++;
 
@@ -228,8 +256,25 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
     {
         seed = episodeSeed;
         enableScentTrails = scentTrailsEnabled;
+        coordinationMode = SwarmFoodCoordinationMode.None;
         autoStartOnPlay = false;
         _suppressMetricsLogging = !logMetricsToCsv;
+        _logCoordinationMetrics = false;
+    }
+
+    public void PrepareForCoordinationBatchRun(
+        int episodeSeed,
+        SwarmFoodCoordinationMode mode,
+        bool logMetricsToCsv = false)
+    {
+        seed = episodeSeed;
+        enableScentTrails = false;
+        coordinationMode = mode;
+        autoStartOnPlay = false;
+        _suppressMetricsLogging = true;
+        _logCoordinationMetrics = logMetricsToCsv;
+        if (_coordinationMetricsLogger != null)
+            _coordinationMetricsLogger.Enabled = logMetricsToCsv;
     }
 
     public IEnumerator RunEpisodeUntilComplete()
@@ -248,6 +293,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         ResetMetrics();
         ResetCoverageField();
         ResetScentField();
+        ResetCoordinationField();
         EnsureRoots();
         SpawnHive();
         SpawnFoodSites();
@@ -258,7 +304,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
 
         Debug.Log(
             $"[EXP-SWARM-004] Started seed={seed} agents={_agents.Count} foodSites={_foodSites.Count} " +
-            $"hive={_hivePosition} maxSteps={maxSteps}.");
+            $"hive={_hivePosition} maxSteps={maxSteps} coordination={coordinationMode}.");
     }
 
     [ContextMenu("End Episode")]
@@ -299,7 +345,31 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             Debug.Log(
                 $"[EXP-SWARM-004] Ended reason={reason} steps={_steps} " +
                 $"foodReturned={FoodReturned} foodDiscovered={FoodDiscovered} " +
-                $"scentTrails={enableScentTrails} scentSteps={ScentInfluencedSteps}.");
+                $"scentTrails={enableScentTrails} scentSteps={ScentInfluencedSteps} " +
+                $"coordination={coordinationMode} coordSteps={CoordinationInfluencedSteps}.");
+        }
+
+        if (_logCoordinationMetrics && _coordinationMetricsLogger != null)
+        {
+            _coordinationMetricsLogger.LogEpisode(new ExperimentSwarm005bEpisodeMetrics
+            {
+                seed = seed,
+                agentCount = _agents.Count,
+                coordinationMode = coordinationMode,
+                steps = _steps,
+                foodDiscovered = FoodDiscovered,
+                foodReturned = FoodReturned,
+                timeToFirstFood = TimeToFirstFood,
+                coverageVolumePercent = CoverageVolumePercent,
+                revisitRatio = RevisitRatio,
+                foragingEfficiency = ForagingEfficiency,
+                signalsEmitted = SignalsEmitted,
+                signalsReceived = SignalsReceived,
+                coordinationInfluencedSteps = CoordinationInfluencedSteps,
+                staleSignalRejects = StaleSignalRejects,
+                duplicateTargetAgentsPeak = DuplicateTargetAgentsPeak,
+                terminationReason = reason
+            });
         }
 
         _lastSnapshot = BuildEpisodeSnapshot(reason);
@@ -321,6 +391,12 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             coverageVolumePercent = CoverageVolumePercent,
             scentDeposits = ScentDeposits,
             scentInfluencedSteps = ScentInfluencedSteps,
+            coordinationMode = coordinationMode,
+            signalsEmitted = SignalsEmitted,
+            signalsReceived = SignalsReceived,
+            coordinationInfluencedSteps = CoordinationInfluencedSteps,
+            staleSignalRejects = StaleSignalRejects,
+            duplicateTargetAgentsPeak = DuplicateTargetAgentsPeak,
             terminationReason = reason
         };
     }
@@ -361,6 +437,17 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
         ForagingEfficiency = 0f;
         TerminationReason = EpisodeTerminationReason.None;
         _scentInfluencedSteps = 0;
+        _coordinationInfluencedSteps = 0;
+        _duplicateTargetAgentsPeak = 0;
+    }
+
+    void ResetCoordinationField()
+    {
+        if (_coordinationSystem == null)
+            _coordinationSystem = new SwarmFoodCoordinationSystem();
+
+        _coordinationSystem.Configure(coordinationMode, broadcastRadius, signalTtlSteps);
+        _coordinationSystem.Reset();
     }
 
     void ResetScentField()
@@ -498,6 +585,8 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
                         _timeToFirstFood = _steps;
                     if (enableScentTrails && _scentField != null && foodDiscoveryDeposit > 0f)
                         _scentField.DepositAt(site.Position, foodDiscoveryDeposit);
+
+                    EmitFoodSignal(i, foodIndex, SwarmFoodSignalKind.Discovered, position);
                 }
 
                 runtime.FoodTargetIndex = foodIndex;
@@ -507,6 +596,9 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
                     runtime.State = SwarmForagingAgentState.ReturningHome;
                     carrying++;
                     UpdateFoodVisual(site);
+                    EmitFoodSignal(i, foodIndex, SwarmFoodSignalKind.PickedUp, position);
+                    if (site.Remaining <= 0)
+                        EmitFoodSignal(i, foodIndex, SwarmFoodSignalKind.Depleted, position);
                 }
             }
         }
@@ -553,6 +645,100 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             if (runtime.Agent.LastUsedScentBias)
                 _scentInfluencedSteps++;
         }
+    }
+
+    void UpdateCoordinationMetrics()
+    {
+        if (!coordinationMode.UsesCoordination())
+            return;
+
+        int[] targetCounts = new int[_foodSites.Count > 0 ? _foodSites.Count : 1];
+        for (int i = 0; i < _agents.Count; i++)
+        {
+            AgentRuntime runtime = _agents[i];
+            if (runtime.Agent.LastUsedCoordinationBias)
+                _coordinationInfluencedSteps++;
+
+            int target = runtime.Agent.LastCoordinationFoodTarget;
+            if (target >= 0 && target < targetCounts.Length)
+                targetCounts[target]++;
+        }
+
+        int duplicateAgents = 0;
+        for (int i = 0; i < targetCounts.Length; i++)
+        {
+            if (targetCounts[i] > 1)
+                duplicateAgents += targetCounts[i];
+        }
+
+        _duplicateTargetAgentsPeak = Mathf.Max(_duplicateTargetAgentsPeak, duplicateAgents);
+    }
+
+    void EmitFoodSignal(int agentIndex, int foodIndex, SwarmFoodSignalKind kind, Vector3 emitterPosition)
+    {
+        if (!coordinationMode.UsesCoordination() || _coordinationSystem == null)
+            return;
+
+        if (foodIndex < 0 || foodIndex >= _foodSites.Count)
+            return;
+
+        var signal = new SwarmFoodSignal
+        {
+            FoodSiteIndex = foodIndex,
+            Position = _foodSites[foodIndex].Position,
+            SenderPosition = emitterPosition,
+            StepCreated = _steps,
+            StepExpires = _steps + signalTtlSteps,
+            Kind = kind,
+            SenderAgentIndex = agentIndex
+        };
+
+        FillAgentPositionBuffer();
+        _coordinationSystem.Emit(signal, _agentPositionBuffer);
+    }
+
+    void FillAgentPositionBuffer()
+    {
+        _agentPositionBuffer.Clear();
+        for (int i = 0; i < _agents.Count; i++)
+            _agentPositionBuffer.Add(_agents[i].Agent.transform.position);
+    }
+
+    bool IsFoodSiteAvailable(int foodSiteIndex)
+    {
+        return foodSiteIndex >= 0 &&
+               foodSiteIndex < _foodSites.Count &&
+               _foodSites[foodSiteIndex].Remaining > 0;
+    }
+
+    public bool TrySampleCoordinationDirection(
+        int agentIndex,
+        Vector3 position,
+        Vector3 velocity,
+        out Vector3 direction)
+    {
+        direction = Vector3.zero;
+        if (!coordinationMode.UsesCoordination() || _coordinationSystem == null || coordinationWeight <= 0f)
+            return false;
+
+        if (agentIndex < 0 || agentIndex >= _agents.Count)
+            return false;
+
+        if (_agents[agentIndex].State != SwarmForagingAgentState.Searching)
+            return false;
+
+        if (!_coordinationSystem.TrySelectBestSignal(
+                _steps,
+                position,
+                IsFoodSiteAvailable,
+                out SwarmFoodSignal signal,
+                out direction))
+        {
+            return false;
+        }
+
+        _agents[agentIndex].Agent.SetLastCoordinationFoodTarget(signal.FoodSiteIndex);
+        return true;
     }
 
     public bool TrySampleScentDirection(int agentIndex, Vector3 position, Vector3 velocity, out Vector3 direction)
@@ -637,6 +823,7 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             ExplorationField = this,
             ForagingField = this,
             ScentField = enableScentTrails ? this : null,
+            CoordinationField = coordinationMode.UsesCoordination() ? this : null,
             NeighborRadius = neighborRadius,
             SeparationRadius = separationRadius,
             MaxSpeed = maxSpeed,
@@ -653,7 +840,8 @@ public class ExperimentSwarm004Runner : MonoBehaviour, ISwarmExplorationField, I
             ExplorationProbeDistance = explorationProbeDistance,
             ExplorationWeight = explorationWeight,
             ForagingWeight = foragingWeight,
-            ScentWeight = enableScentTrails ? scentWeight : 0f
+            ScentWeight = enableScentTrails ? scentWeight : 0f,
+            CoordinationWeight = coordinationMode.UsesCoordination() ? coordinationWeight : 0f
         };
     }
 

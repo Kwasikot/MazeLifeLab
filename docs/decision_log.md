@@ -37,7 +37,80 @@ What could go wrong?
 
 ---
 
-## 2026-06-21 — Pivot from RRT-centered navigation to swarm-flight artificial life
+## 2026-06-24 — EXP-SWARM-005b gate passed: hive bulletin coordination works
+
+### Context
+
+EXP-SWARM-005b implemented explicit food signals (None / HiveBulletin / LocalBroadcast / GlobalBroadcast) after scent trails failed. Eight-run batch completed in Unity (seeds 42, 137).
+
+### Decision
+
+1. **Accept** EXP-SWARM-005b first gate: verdict **COORDINATION WORKING**.
+2. Treat **HiveBulletin** as the leading coordination mechanism for foraging (not scent gradients, not local broadcast as default).
+3. **Defer** EXP-SWARM-006 until coordination gains are confirmed on additional seeds.
+4. **Pause** further scent-gradient work unless needed as a negative baseline.
+
+### Reasoning
+
+Hive bulletin raised mean food returned from 37.0 to 105.0 (+184%) with coordination active on both seeds. This validates discrete food-site signalling over continuous hive-biased pheromone gradients. Local broadcast helped (+66% food) but underperformed hive bulletin, suggesting persistent hive memory beats limited-radius peer signals in the current maze layout.
+
+### Alternatives Considered
+
+- Promote LocalBroadcast as primary — rejected for now; tune radius/weights first.
+- Advance to EXP-SWARM-006 threats — blocked pending multi-seed validation.
+- Re-enable scent trails with food-biased deposits — superseded by positive explicit coordination result.
+
+### Risks / Limitations
+
+- Only two seeds; high baseline variance (49 vs 25 without coordination).
+- No CSV archived; metrics from Inspector screenshot.
+- Evaluator tie-break may hide GlobalBroadcast outperforming HiveBulletin on equal pass counts.
+
+### Related Files
+
+- `docs/journal/reports/2026-06-24_exp-swarm-005b_coordination_ablation.md`
+- `docs/journal/screenshots/scr3.png`
+- `Assets/Scripts/Experiments/ExperimentSwarmCoordinationAblationHarness.cs`
+- `Assets/Scripts/Experiments/SwarmFoodCoordinationEvaluator.cs`
+
+---
+
+## 2026-06-24 — Pause scent gradient trails; adopt EXP-SWARM-005b explicit coordination
+
+### Context
+
+EXP-SWARM-005 trail ablation (seeds 42, 137) found scent trails **active but harmful**: mean food 31.5 with trails vs 37.0 without. Code review showed return-path deposits create hive-biased gradients that searching agents follow.
+
+### Decision
+
+1. **Pause** scent **gradient following** as the active coordination hypothesis for swarm foraging.
+2. **Adopt EXP-SWARM-005b**: explicit food signals (hive bulletin, then local broadcast) without environmental odor steering.
+3. Keep legacy scent code behind `enableScentTrails` default **off** for comparison only.
+
+### Reasoning
+
+Gradient stigmergy conflates “path home” with “path to food” in a hive-centered arena. Discrete messages with TTL and food-site identity match the foraging task semantics and are easier to ablate than continuous fields.
+
+### Alternatives Considered
+
+- Tune deposit weights only (food-biased deposits, lower `scentWeight`) — deferred; paradigm shift preferred after negative ablation.
+- Port EXP-005 `FrontierClaim` to 3D swarm — useful for exploration coverage, not primary for food return.
+- Skip to EXP-SWARM-006 threats — blocked until coordination baseline clarified.
+
+### Risks / Limitations
+
+- Global broadcast oracle may inflate expectations; must compare to Independent.
+- Hive bulletin may cause overcrowding at known sites.
+- Local broadcast range tuning may dominate results.
+
+### Related Files
+
+- `docs/experiment_swarm_005b_food_coordination.md`
+- `docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md`
+- `Assets/Scripts/Experiments/ExperimentSwarm004Runner.cs`
+- `Assets/Scripts/Agents/SwarmScentField.cs`
+
+---
 
 ### Context
 

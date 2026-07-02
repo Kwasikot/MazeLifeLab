@@ -13,24 +13,26 @@ The purpose is to preserve research context between coding sessions.
 Experiment ID:
 
 ```text
-EXP-SWARM-005
+EXP-SWARM-005b
 ```
 
 Name:
 
 ```text
-Scent / Pheromone Field (Trail Ablation)
+Food Coordination Without Scent Gradients (Hive Bulletin / Local Broadcast)
 ```
 
 Status:
 
 ```text
-IN PROGRESS - first batch ablation completed 2025-06-24; verdict TRAILS NOT WORKING; iterate deposit model before next gate
+GATE PASSED (2026-06-24) — 8-run batch: HiveBulletin best; mean food 105.0 vs None 37.0; verdict COORDINATION WORKING
 ```
 
 Primary document:
 
 ```text
+docs/experiment_swarm_005b_food_coordination.md
+docs/journal/reports/2026-06-24_exp-swarm-005b_coordination_ablation.md
 docs/swarm_flight_research_agenda.md
 docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md
 ```
@@ -173,16 +175,27 @@ Unity scenes: EXP-005 -> Assets/Scenes/EXP-005.unity (was SampleScene); EXP-SWAR
 Journal build: python Tools/build_journal.py (source: docs/journal/reports/ + journal.manifest.json)
 ```
 
-# Pending Validation For EXP-SWARM-005
+# Implemented For EXP-SWARM-005b (Initial)
 
 ```text
-Revise trail deposit semantics (food-biased, weaker return-path deposit)
-Lower scentWeight and rerun ExperimentSwarmTrailAblationHarness on seeds 42 and 137
-Add follow-up journal entry after retry batch
-Do not start EXP-SWARM-006 until trail ablation passes or is formally abandoned
+SwarmFoodCoordinationMode + SwarmFoodCoordinationSystem (hive bulletin, local broadcast, global oracle)
+ISwarmFoodCoordinationField steering on SwarmFlightAgent
+ExperimentSwarm004Runner food signal emit on discover/pickup/depleted
+ExperimentSwarm005bMetricsLogger -> results/experiment_swarm_005b_food_coordination.csv
+ExperimentSwarmCoordinationAblationHarness + Inspector editor (seeds 42, 137 x 4 modes)
+SwarmFoodCoordinationEvaluator pass/fail vs None baseline
+enableScentTrails default remains false; legacy trail path retained
 ```
 
----
+# Pending Validation For EXP-SWARM-005b
+
+```text
+Add ExperimentSwarmCoordinationAblationHarness to Assets/Scenes/EXP-SWARM-005.unity (disable legacy trail harness)
+Play mode -> Run All Tests
+Confirm coordination_influenced_steps > 0 for non-None modes
+Compare food return vs None on seeds 42 and 137
+Write journal entry after first batch
+```
 
 # Implemented For EXP-SWARM-005 (Initial)
 
@@ -379,14 +392,14 @@ Swarm-based flying artificial life using simple local rules, environmental cues,
 
 # Next Recommended Task
 
-Iterate EXP-SWARM-005 trail semantics and rerun ablation:
+EXP-SWARM-005b gate passed (2026-06-24). Next validation:
 
-- food-biased deposits; reduce return-path deposit;
-- lower `scentWeight` on `ExperimentSwarm004Runner`;
-- rerun `ExperimentSwarmTrailAblationHarness` (seeds 42, 137);
-- write follow-up entry in `docs/journal/reports/` and update `docs/journal/index.html`.
+- enable `logBatchRunsToCsv` on coordination harness;
+- rerun ablation with seeds **200, 300** added (16 runs total);
+- tune `LocalBroadcast` (`broadcastRadius`, signal weights) vs HiveBulletin;
+- journal: `docs/journal/reports/2026-06-24_exp-swarm-005b_coordination_ablation.md`
 
-See journal report: `docs/journal/reports/2025-06-24_exp-swarm-005_trail_ablation.md`
+Do not start EXP-SWARM-006 until ≥4 seeds confirm coordination gain.
 
 ---
 

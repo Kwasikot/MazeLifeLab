@@ -345,6 +345,7 @@ GameObject:
   - component: {fileID: 910000007}
   - component: {fileID: 910000008}
   - component: {fileID: 910000009}
+  - component: {fileID: 910000010}
   m_Layer: 0
   m_Name: MazeSystem
   m_TagString: Untagged
@@ -586,7 +587,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 910000001}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1157890ffb6cbdf4e8aa8beef7ffe9d0, type: 3}
   m_Name: 
@@ -658,6 +659,116 @@ MonoBehaviour:
     metricsRequired: 0
   lastWithoutTrails: []
   lastWithTrails: []
+--- !u!114 &910000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8f4a2b19c3d4e5f8a7b6c5d4e3f2a10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  foragingRunner: {fileID: 910000008}
+  mazeGen: {fileID: 910000002}
+  testSeeds:
+  - 42
+  - 137
+  includeGlobalOracle: 1
+  logBatchRunsToCsv: 0
+  liveStatus:
+    isRunningBatch: 0
+    completedRuns: 0
+    totalRuns: 0
+    currentRunIndex: 0
+    currentSeed: 0
+    currentMode: 0
+    liveSteps: 0
+    liveFoodReturned: 0
+    liveFoodDiscovered: 0
+    liveCoordinationSteps: 0
+    liveSignalsEmitted: 0
+    liveForagingEfficiency: 0
+    liveRevisitRatio: 0
+    partialNone:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+    partialHive:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+    partialLocal:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+    partialGlobal:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+  lastReport:
+    isComplete: 0
+    verdict: 0
+    verdictSummary: 
+    bestMode: 0
+    baselineNone:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+    hiveBulletin:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+    localBroadcast:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+    globalBroadcast:
+      runCount: 0
+      meanFoodReturned: 0
+      meanForagingEfficiency: 0
+      meanTimeToFirstFood: 0
+      meanRevisitRatio: 0
+      meanSignalsEmitted: 0
+      meanCoordinationInfluencedSteps: 0
+    bestFoodReturnedDeltaPercent: 0
+    bestForagingEfficiencyDeltaPercent: 0
+    metricsPassed: 0
+    metricsRequired: 0
+  lastNoneRuns: []
+  lastHiveRuns: []
+  lastLocalRuns: []
+  lastGlobalRuns: []
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0

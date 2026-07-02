@@ -14,6 +14,7 @@ public struct SwarmForagingEpisodeSnapshot
 {
     public int seed;
     public bool scentTrailsEnabled;
+    public SwarmFoodCoordinationMode coordinationMode;
     public int steps;
     public int foodReturned;
     public int foodDiscovered;
@@ -23,6 +24,11 @@ public struct SwarmForagingEpisodeSnapshot
     public float coverageVolumePercent;
     public int scentDeposits;
     public int scentInfluencedSteps;
+    public int signalsEmitted;
+    public int signalsReceived;
+    public int coordinationInfluencedSteps;
+    public int staleSignalRejects;
+    public int duplicateTargetAgentsPeak;
     public EpisodeTerminationReason terminationReason;
 }
 

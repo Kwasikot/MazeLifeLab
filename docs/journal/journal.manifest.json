@@ -11,9 +11,9 @@
     },
     {
       "path": "Assets/Scenes/EXP-SWARM-005.unity",
-      "experiment": "EXP-SWARM-005",
-      "description": "Bee-hive foraging with optional scent trails and automated trail ablation harness.",
-      "runners": "ExperimentSwarm004Runner + ExperimentSwarmTrailAblationHarness"
+      "experiment": "EXP-SWARM-005 / EXP-SWARM-005b",
+      "description": "Bee-hive foraging; coordination ablation harness (005b active); legacy trail harness optional.",
+      "runners": "ExperimentSwarm004Runner + ExperimentSwarmCoordinationAblationHarness"
     }
   ],
   "reports": [
@@ -44,6 +44,20 @@
         "label": "VERDICT: TRAILS NOT WORKING (0 / 2 primary metrics passed)"
       },
       "sort_order": 2
+    },
+    {
+      "file": "2026-06-24_exp-swarm-005b_coordination_ablation.md",
+      "section_id": "exp-swarm-005b-coordination-ablation-2026-06-24",
+      "date": "2026-06-24",
+      "experiment_id": "EXP-SWARM-005b",
+      "title": "Food Coordination Ablation",
+      "status": "Positive result — coordination working",
+      "unity_scene": "Assets/Scenes/EXP-SWARM-005.unity",
+      "verdict": {
+        "class": "pass",
+        "label": "VERDICT: COORDINATION WORKING (2 / 2 primary metrics, HiveBulletin best)"
+      },
+      "sort_order": 3
     }
   ]
 }

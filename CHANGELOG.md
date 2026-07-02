@@ -8,6 +8,25 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ## [Unreleased]
 
+### Added
+
+- Journal entry for EXP-SWARM-005b food coordination ablation (2026-06-24): 8-run batch, verdict **COORDINATION WORKING**, HiveBulletin mean food 105.0 vs None 37.0; screenshot `docs/journal/screenshots/scr3.png`.
+
+### Research Notes
+
+- Experiment: EXP-SWARM-005b Food Coordination Ablation
+- Metrics impacted: food returned, foraging efficiency, coordination_influenced_steps, signals_emitted (Inspector capture; CSV not saved this run)
+- Scientific reason: first positive gate for explicit food signals after scent-trail negative ablation
+- Risks / limitations: 2 seeds only; LocalBroadcast underperformed HiveBulletin; GlobalBroadcast panel clipped; evaluator tie-break favours first passing mode
+
+### Added
+
+- EXP-SWARM-005b food coordination (no scent gradients): `SwarmFoodCoordinationSystem`, coordination steering on `SwarmFlightAgent`, `ExperimentSwarmCoordinationAblationHarness`, CSV `results/experiment_swarm_005b_food_coordination.csv`; modes None / HiveBulletin / LocalBroadcast / GlobalBroadcast.
+
+### Changed
+
+- Active experiment pivot: EXP-SWARM-005 scent gradients paused; EXP-SWARM-005b explicit food coordination planned (`docs/experiment_swarm_005b_food_coordination.md`, `docs/decision_log.md`).
+
 ### Changed
 
 - README: link to experiment results journal (`docs/journal/`).
