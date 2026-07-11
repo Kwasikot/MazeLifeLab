@@ -90,6 +90,29 @@ Key documents:
 
 ---
 
+## 🌐 Browser Simulations (`Games/`)
+
+Standalone TypeScript + Vite demos alongside the Unity research platform. Each runs locally with `npm install` and `npm run dev`.
+
+| Simulation | Local URL | Folder | Description |
+|------------|-----------|--------|-------------|
+| **Roman Legion Formation Lab** | [http://localhost:5174](http://localhost:5174) | [`Games/RomanLegionFormation`](Games/RomanLegionFormation) | Agent-based model of Roman soldiers self-assembling into formations (triple line, rectangle, square) using **local perception only** — no global oracle. FSM phases, facing commands, slot loyalty. Educational demo of decentralized coordination. |
+| **Protoplanetary Disk Lab** | [http://localhost:5175](http://localhost:5175) | [`Games/ProtoplanetaryDiskLab`](Games/ProtoplanetaryDiskLab) | Interactive 3D mini-laboratory: protostellar disk, particle collisions, accretion into protoplanets, real-time metrics, phase-space projections, and PCA state-space explorer. Simplified educational astrophysics — not a rigorous N-body simulation. |
+
+Quick start:
+
+```bash
+# Roman soldiers
+cd Games/RomanLegionFormation && npm install && npm run dev
+
+# Protoplanetary disk
+cd Games/ProtoplanetaryDiskLab && npm install && npm run dev
+```
+
+More detail in each project's README: [`Games/RomanLegionFormation/README.md`](Games/RomanLegionFormation/README.md) · [`Games/ProtoplanetaryDiskLab/README.md`](Games/ProtoplanetaryDiskLab/README.md).
+
+---
+
 ## 🧭 Research Direction
 
 The new swarm-flight research ladder is:

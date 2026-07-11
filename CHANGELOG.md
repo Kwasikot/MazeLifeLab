@@ -10,6 +10,29 @@ This project follows a research-oriented changelog discipline: changes should be
 
 ### Added
 
+- `Games/ProtoplanetaryDiskLab` — браузерная мини-лаборатория симуляции протопланетного диска (TypeScript, Three.js, Vite): 3 режима физики, аккреция, графики метрик, фазовое пространство, State-Space Explorer (PCA), экспорт данных.
+
+### Research Notes
+
+- Standalone educational simulation (not tied to active Unity experiment EXP-SWARM-005b)
+- Simplified astrophysics model with explicit disclaimers; numerical energy/angular-momentum drift tracked in UI
+
+### Added
+
+- Journal entry: EXP-SWARM-005b coordination rerun (2026-07-04) — 8-run confirmation from Unity Editor.log; metrics match 2026-06-24 gate; GlobalBroadcast mean food 105.0 ties HiveBulletin.
+
+### Research Notes
+
+- Experiment: EXP-SWARM-005b coordination rerun confirmation
+- Metrics: reproducible on seeds 42/137; CSV/manifest not saved (artifact recorder compile issue during session)
+- Next: 4-seed batch with artifact capture after clean compile
+
+### Added
+
+- `ExperimentArtifactRecorder` on MazeSystem: forces CSV metrics logging for all runners/harnesses, writes unified `results/experiment_run_manifest.csv`, auto-captures Game-view screenshots to `results/screenshots/` (copy to `docs/journal/screenshots/auto/`). Coordination ablation now has Game-view OSD for batch verdict.
+
+### Added
+
 - Journal entry for EXP-SWARM-005b food coordination ablation (2026-06-24): 8-run batch, verdict **COORDINATION WORKING**, HiveBulletin mean food 105.0 vs None 37.0; screenshot `docs/journal/screenshots/scr3.png`.
 
 ### Research Notes
